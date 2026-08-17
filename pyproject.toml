@@ -13,6 +13,8 @@ dependencies = [
     "asyncpg",
     "alembic",
     "pydantic-settings",
+    "PyJWT[crypto]",
+    "supabase",
 ]
 
 

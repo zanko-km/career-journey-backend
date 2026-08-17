@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     app_env: str = "development"
     database_url: str
     
+    auth_issuer: str
+    auth_audience: str = "authenticated"
     
     model_config = SettingsConfigDict(
         env_file = ".env",
