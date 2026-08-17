@@ -1,0 +1,20 @@
+[project]
+
+name = "career-journey-backend"
+version = "0.1.0"
+description = "Career Journey Backend API"
+requires-python = ">=3.12,<3.13"
+
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+    "httpx2",
+]
