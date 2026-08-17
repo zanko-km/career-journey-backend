@@ -4,3 +4,4 @@
 app/__pycache__
 career_journey_backend.egg-info
 tests/__pycache__
+app/core/__pycache__
