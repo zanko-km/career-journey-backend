@@ -1,7 +1,9 @@
 .venv/
 .env
 .pytest_cache/
-app/__pycache__
-career_journey_backend.egg-info
-tests/__pycache__
-app/core/__pycache__
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.env.test
