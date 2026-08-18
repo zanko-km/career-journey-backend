@@ -19,3 +19,12 @@ class AuthResponse(BaseModel):
     refreshToken: str
     expiresIn: int | None = None
     user: UserSummary
+    
+class RefreshRequest(BaseModel):
+    refreshToken: str
+
+
+class RefreshResponse(BaseModel):
+    accessToken: str
+    refreshToken: str
+    expiresIn: int | None = None

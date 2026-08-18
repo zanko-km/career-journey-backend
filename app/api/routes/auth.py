@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 
 from app.core.current_user import get_current_user, load_authenticated_user
 from app.schemas.auth import LoginRequest
@@ -8,6 +8,9 @@ from supabase import Client
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.schemas.auth import AuthResponse, UserSummary
+from app.core.security import bearer_scheme
+from fastapi.security import HTTPAuthorizationCredentials
+from app.schemas.auth import RefreshRequest, RefreshResponse
 
 router = APIRouter(prefix="/auth")
 
@@ -47,3 +50,28 @@ async def login(
             roles=authed_user.roles,
         ),
     )
+    
+@router.post("/refresh", response_model=RefreshResponse)
+async def refresh(
+    payload: RefreshRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    try:
+        response = auth_service.refresh(payload.refreshToken)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    return RefreshResponse(
+        accessToken=response.session.access_token,
+        refreshToken=response.session.refresh_token,
+        expiresIn=response.session.expires_in,
+    )
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    auth_service.logout(credentials.credentials)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
