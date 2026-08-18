@@ -4,7 +4,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_real_supabase_token(client, supabase_access_token, provisioned_test_employee):
     response = await client.get(
-        "/api/v1/auth/me",
+        "/auth/me",
         headers={
             "Authorization": f"Bearer {supabase_access_token}"
         },
@@ -15,7 +15,7 @@ async def test_real_supabase_token(client, supabase_access_token, provisioned_te
 @pytest.mark.asyncio
 async def test_login_requires_username_and_password(client):
     response = await client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         json={},
     )
 

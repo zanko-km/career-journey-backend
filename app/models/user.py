@@ -5,10 +5,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from typing import TYPE_CHECKING
-
+from enum import Enum
 if TYPE_CHECKING:
     from app.models.employee import Employee
-
+class EmployeeRoleType(str, Enum):
+    EMPLOYEE = "EMPLOYEE"
+    MANAGER = "MANAGER"
+    HRBP = "HRBP"
+    HR_MANAGER = "HR_MANAGER"
 class User(Base):
     __tablename__ = "users"
 

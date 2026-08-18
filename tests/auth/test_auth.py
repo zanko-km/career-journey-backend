@@ -4,14 +4,14 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_missing_token_returns_401(client):
-    response = await client.get("/api/v1/auth/me")
+    response = await client.get("/auth/me")
 
     assert response.status_code == 401
     
 @pytest.mark.asyncio
 async def test_login_returns_auth_response(client, provisioned_test_employee):
     response = await client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         json={
             "username": "test@gmail.com",
             "password": "testuser1",
@@ -37,13 +37,13 @@ async def test_login_returns_auth_response(client, provisioned_test_employee):
 @pytest.mark.asyncio
 async def test_refresh_returns_new_tokens(client, provisioned_test_employee):
     login_response = await client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         json={"username": "test@gmail.com", "password": "testuser1"},
     )
     refresh_token = login_response.json()["refreshToken"]
 
     response = await client.post(
-        "/api/v1/auth/refresh",
+        "/auth/refresh",
         json={"refreshToken": refresh_token},
     )
 
@@ -58,7 +58,7 @@ async def test_refresh_returns_new_tokens(client, provisioned_test_employee):
 @pytest.mark.asyncio
 async def test_refresh_with_invalid_token_returns_401(client):
     response = await client.post(
-        "/api/v1/auth/refresh",
+        "/auth/refresh",
         json={"refreshToken": "invalid-refresh-token"},
     )
     assert response.status_code == 401
@@ -67,13 +67,13 @@ async def test_refresh_with_invalid_token_returns_401(client):
 @pytest.mark.asyncio
 async def test_logout_returns_204(client, provisioned_test_employee):
     login_response = await client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         json={"username": "test@gmail.com", "password": "testuser1"},
     )
     access_token = login_response.json()["accessToken"]
 
     response = await client.post(
-        "/api/v1/auth/logout",
+        "/auth/logout",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -82,5 +82,5 @@ async def test_logout_returns_204(client, provisioned_test_employee):
 
 @pytest.mark.asyncio
 async def test_logout_without_token_returns_401(client):
-    response = await client.post("/api/v1/auth/logout")
+    response = await client.post("/auth/logout")
     assert response.status_code == 401

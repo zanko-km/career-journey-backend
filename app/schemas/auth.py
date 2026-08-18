@@ -1,9 +1,9 @@
-from pydantic import BaseModel
-
+from pydantic import BaseModel, SecretStr
+from app.models.user import EmployeeRoleType
 
 class LoginRequest(BaseModel):
     username: str
-    password: str
+    password: SecretStr
 
 
 class UserSummary(BaseModel):
@@ -11,7 +11,7 @@ class UserSummary(BaseModel):
     employeeId: int
     username: str
     fullName: str
-    roles: list
+    roles: list[EmployeeRoleType]
 
 
 class AuthResponse(BaseModel):

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 
-from app.core.current_user import get_current_user, load_authenticated_user
+from app.core.current_user import get_current_user, load_authenticated_user, AuthenticatedUser
 from app.schemas.auth import LoginRequest
 from app.services.auth import AuthService
 from app.core.supabase import get_supabase
@@ -11,6 +11,8 @@ from app.schemas.auth import AuthResponse, UserSummary
 from app.core.security import bearer_scheme
 from fastapi.security import HTTPAuthorizationCredentials
 from app.schemas.auth import RefreshRequest
+from app.schemas.errors import ErrorResponse
+
 
 router = APIRouter(prefix="/auth")
 
@@ -20,11 +22,41 @@ def get_auth_service(
 ) -> AuthService:
     return AuthService(supabase)
 
-@router.get("/me")
-async def me(current_user=Depends(get_current_user)):
+@router.get(
+    "/me",
+    response_model=AuthenticatedUser,
+    openapi_extra={
+        "x-allowed-roles": [
+            "EMPLOYEE",
+            "MANAGER",
+            "HRBP",
+            "HR_MANAGER",
+        ]
+    },
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        }
+    },
+    )
+async def me(current_user: AuthenticatedUser =Depends(get_current_user)):
     return current_user
 
-@router.post("/login", response_model=AuthResponse)
+@router.post(
+    "/login",
+    response_model=AuthResponse,
+    responses={
+        401: {
+                "description": "Unauthorized",
+                "model": ErrorResponse,
+            },
+            422: {
+                "description": "Validation Error",
+                "model": ErrorResponse,
+            },
+        },
+             )
 async def login(
     payload: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
@@ -32,7 +64,7 @@ async def login(
 ):
     response = auth_service.login(
         username=payload.username,
-        password=payload.password,
+        password=payload.password.get_secret_value(),
     )
 
     supabase_user_id = response.user.id
@@ -43,7 +75,7 @@ async def login(
         refreshToken=response.session.refresh_token,
         expiresIn=response.session.expires_in,
         user=UserSummary(
-            id=authed_user.employee_id,
+            id=authed_user.id,
             employeeId=authed_user.employee_id,
             username=authed_user.username,
             fullName=authed_user.full_name,
@@ -51,7 +83,17 @@ async def login(
         ),
     )
     
-@router.post("/refresh", response_model=AuthResponse)
+@router.post("/refresh", response_model=AuthResponse,
+             responses={
+                 401: {
+                    "description": "Unauthorized",
+                    "model": ErrorResponse,
+                 },
+                 422: {
+                    "description": "Unauthorized",
+                    "model": ErrorResponse,
+                 }
+             })
 async def refresh(
     payload: RefreshRequest,
     auth_service: AuthService = Depends(get_auth_service),
@@ -77,10 +119,20 @@ async def refresh(
         ),
     )
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        }
+    },
+)
 async def logout(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     auth_service: AuthService = Depends(get_auth_service),
 ):
     auth_service.logout(credentials.credentials)
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)

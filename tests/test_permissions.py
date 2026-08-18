@@ -15,7 +15,7 @@ async def test_require_roles_blocks_unauthorized_role():
         return {"ok": True}
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
-        employee_id=1, username="ali", full_name="Ali", roles=["EMPLOYEE"]
+        id=1, employee_id=1, username="ali", full_name="Ali", roles=["EMPLOYEE"]
     )
 
     transport = ASGITransport(app=app)
@@ -34,7 +34,7 @@ async def test_require_roles_allows_matching_role():
         return {"ok": True}
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
-        employee_id=1, username="ali", full_name="Ali", roles=["EMPLOYEE", "HRBP"]
+        id=1, employee_id=1, username="ali", full_name="Ali", roles=["EMPLOYEE", "HRBP"]
     )
 
     transport = ASGITransport(app=app)
