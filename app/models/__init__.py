@@ -8,8 +8,10 @@ from app.models.onboarding import Onboarding, OnboardingStatus, Decision, FinalR
 from app.models.onboarding_phase import OnboardingPhase, PhaseStatus
 from app.models.onboarding_task import OnboardingTask
 from app.models.meeting import Meeting, MeetingStatus
+from app.models.department import Department
+
 
 __all__ = ["User", "Employee", "EmployeeStatus", "ExitType", "EmployeeRole", "Position", "Team",
            "HrbpTeamAssignment",
            "Onboarding", "OnboardingStatus", "OnboardingPhase", "OnboardingTask", "Meeting", "MeetingStatus",
-           "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus"]
+           "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus", "Department"]

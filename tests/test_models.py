@@ -1,6 +1,6 @@
 import pytest
 from datetime import date
-from app.models import Employee, EmployeeRole, Team, Position
+from app.models import Employee, EmployeeRole, Team, Position, Department
 
 
 @pytest.mark.asyncio
@@ -18,9 +18,27 @@ async def test_employee_role_can_be_created(db_session):
 
 @pytest.mark.asyncio
 async def test_employee_can_have_manager_and_team(db_session):
-    manager = Employee(username="manager1", full_name="Manager", join_date=date.today())
-    team = Team(name="Backend")
-    db_session.add_all([manager, team])
+    manager = Employee(
+        username="manager1",
+        full_name="Manager",
+        join_date=date.today(),
+    )
+
+    department = Department(
+        name="Engineering",
+        description="Backend department",
+    )
+
+    db_session.add_all([manager, department])
+    await db_session.flush()
+
+    team = Team(
+        name="Backend",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(team)
     await db_session.flush()
 
     emp = Employee(
@@ -30,6 +48,7 @@ async def test_employee_can_have_manager_and_team(db_session):
         manager_id=manager.id,
         team_id=team.id,
     )
+
     db_session.add(emp)
     await db_session.flush()
 

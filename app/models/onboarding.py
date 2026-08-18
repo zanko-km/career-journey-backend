@@ -1,7 +1,7 @@
 from datetime import date
 from sqlalchemy import Date, ForeignKey
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 import enum
 
@@ -47,7 +47,16 @@ class Onboarding(Base):
         SAEnum(OnboardingStatus), default=OnboardingStatus.NOT_STARTED, nullable=False
     )
     current_phase_number: Mapped[int | None]
+    employee = relationship(
+        "Employee",
+        back_populates="onboarding",
+        foreign_keys=[employee_id],
+    )
 
+    buddy = relationship(
+        "Employee",
+        foreign_keys=[buddy_id],
+    )
     employee_decision: Mapped[Decision | None] = mapped_column(SAEnum(Decision))
     manager_decision: Mapped[Decision | None] = mapped_column(SAEnum(Decision))
     final_result: Mapped[FinalResult] = mapped_column(

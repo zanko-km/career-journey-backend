@@ -2,12 +2,27 @@ from datetime import date
 
 from sqlalchemy import ForeignKey
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-
+from app.models.position import Position
 import enum
 
+
+@property
+def job_title(self) -> str | None:
+    if self.position is None:
+        return None
+
+    return self.position.title
+
+
+@job_title.setter
+def job_title(self, value: str | None):
+    if value is None:
+        self.position = None
+    else:
+        self.position = Position(title=value)
 
 class EmployeeStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
@@ -19,6 +34,13 @@ class ExitType(str, enum.Enum):
     RESIGNATION = "RESIGNATION"
     TERMINATION = "TERMINATION"
 
+
+class CareerStage(str, enum.Enum):
+    PRE_ONBOARDING = "PRE_ONBOARDING"
+    ONBOARDING = "ONBOARDING"
+    POST_ONBOARDING = "POST_ONBOARDING"
+    EXITED = "EXITED"
+    INACTIVE = "INACTIVE"
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -39,8 +61,56 @@ class Employee(Base):
         nullable=False,
     )
 
-    exit_type: Mapped[ExitType | None] = mapped_column(SAEnum(ExitType))
+    exit_type: Mapped[ExitType | None] = mapped_column(
+        SAEnum(ExitType)
+    )
 
-    manager_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id"))
-    team_id: Mapped[int | None] = mapped_column(ForeignKey("teams.id"))
-    position_id: Mapped[int | None] = mapped_column(ForeignKey("positions.id"))
+    manager_id: Mapped[int | None] = mapped_column(
+        ForeignKey("employees.id")
+    )
+
+    team_id: Mapped[int | None] = mapped_column(
+        ForeignKey("teams.id")
+    )
+
+    position_id: Mapped[int | None] = mapped_column(
+        ForeignKey("positions.id")
+    )
+
+    team = relationship(
+        "Team",
+        foreign_keys=[team_id],
+        back_populates="employees",
+    )
+
+    position = relationship(
+        "Position",
+        back_populates="employees",
+    )
+
+    career_stage: Mapped[CareerStage] = mapped_column(
+        SAEnum(CareerStage),
+        default=CareerStage.PRE_ONBOARDING,
+        nullable=False,
+    )
+
+    onboarding = relationship(
+        "Onboarding",
+        back_populates="employee",
+        foreign_keys="Onboarding.employee_id",
+        uselist=False,
+    )
+    
+    @property
+    def job_title(self) -> str | None:
+        if self.position is None:
+            return None
+
+        return self.position.title
+
+    @job_title.setter
+    def job_title(self, value: str | None):
+        if value is None:
+            self.position = None
+        else:
+            self.position = Position(title=value)
