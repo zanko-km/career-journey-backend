@@ -119,7 +119,7 @@ async def provisioned_test_employee(db_session):
         "password": settings.test_user_password,
     })
 
-    employee = Employee(username="test_employee", full_name="Test Employee", join_date=date.today())
+    employee = Employee(username="test@gmail.com", full_name="Test Employee", join_date=date.today())
     db_session.add(employee)
     await db_session.flush()
 

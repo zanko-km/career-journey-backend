@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.schemas.auth import AuthResponse, UserSummary
 from app.core.security import bearer_scheme
 from fastapi.security import HTTPAuthorizationCredentials
-from app.schemas.auth import RefreshRequest, RefreshResponse
+from app.schemas.auth import RefreshRequest
 
 router = APIRouter(prefix="/auth")
 
@@ -51,22 +51,31 @@ async def login(
         ),
     )
     
-@router.post("/refresh", response_model=RefreshResponse)
+@router.post("/refresh", response_model=AuthResponse)
 async def refresh(
     payload: RefreshRequest,
     auth_service: AuthService = Depends(get_auth_service),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         response = auth_service.refresh(payload.refreshToken)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
-    return RefreshResponse(
+    authed_user = await load_authenticated_user(str(response.user.id), db)
+
+    return AuthResponse(
         accessToken=response.session.access_token,
         refreshToken=response.session.refresh_token,
         expiresIn=response.session.expires_in,
+        user=UserSummary(
+            id=authed_user.employee_id,
+            employeeId=authed_user.employee_id,
+            username=authed_user.username,
+            fullName=authed_user.full_name,
+            roles=authed_user.roles,
+        ),
     )
-
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(

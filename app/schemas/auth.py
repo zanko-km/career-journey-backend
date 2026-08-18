@@ -22,9 +22,3 @@ class AuthResponse(BaseModel):
     
 class RefreshRequest(BaseModel):
     refreshToken: str
-
-
-class RefreshResponse(BaseModel):
-    accessToken: str
-    refreshToken: str
-    expiresIn: int | None = None

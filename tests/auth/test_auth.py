@@ -35,9 +35,7 @@ async def test_login_returns_auth_response(client, provisioned_test_employee):
     assert "roles" in user
 
 @pytest.mark.asyncio
-async def test_refresh_returns_new_tokens(client, provisioned_test_employee, supabase_access_token):
-    from app.core.config import settings
-    from supabase import create_client
+async def test_refresh_returns_new_tokens(client, provisioned_test_employee):
     login_response = await client.post(
         "/api/v1/auth/login",
         json={"username": "test@gmail.com", "password": "testuser1"},
@@ -53,6 +51,8 @@ async def test_refresh_returns_new_tokens(client, provisioned_test_employee, sup
     data = response.json()
     assert "accessToken" in data
     assert "refreshToken" in data
+    assert "user" in data
+    assert data["user"]["roles"] == ["EMPLOYEE"]
 
 
 @pytest.mark.asyncio

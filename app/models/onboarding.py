@@ -7,11 +7,29 @@ import enum
 
 
 class OnboardingStatus(str, enum.Enum):
-    MONTH_1 = "MONTH_1"
-    MONTH_2 = "MONTH_2"
-    MONTH_3 = "MONTH_3"
+    NOT_STARTED = "NOT_STARTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    FINAL_DECISION_PENDING = "FINAL_DECISION_PENDING"
     COMPLETED = "COMPLETED"
     EXITED = "EXITED"
+    CANCELLED = "CANCELLED"
+
+
+class Decision(str, enum.Enum):
+    CONTINUE = "CONTINUE"
+    EXIT = "EXIT"
+
+
+class FinalResult(str, enum.Enum):
+    PENDING = "PENDING"
+    CONTINUE = "CONTINUE"
+    EXIT = "EXIT"
+
+
+class InvestmentDecision(str, enum.Enum):
+    NONE = "NONE"
+    INVESTMENT = "INVESTMENT"
+    NORMAL = "NORMAL"
 
 
 class Onboarding(Base):
@@ -19,7 +37,6 @@ class Onboarding(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id"), unique=True)
-    position_id: Mapped[int | None] = mapped_column(ForeignKey("positions.id"))
     buddy_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id"))
 
     start_date: Mapped[date]
@@ -27,7 +44,15 @@ class Onboarding(Base):
     duration_months: Mapped[int] = mapped_column(default=3)
 
     status: Mapped[OnboardingStatus] = mapped_column(
-        SAEnum(OnboardingStatus),
-        default=OnboardingStatus.MONTH_1,
-        nullable=False,
+        SAEnum(OnboardingStatus), default=OnboardingStatus.NOT_STARTED, nullable=False
+    )
+    current_phase_number: Mapped[int | None]
+
+    employee_decision: Mapped[Decision | None] = mapped_column(SAEnum(Decision))
+    manager_decision: Mapped[Decision | None] = mapped_column(SAEnum(Decision))
+    final_result: Mapped[FinalResult] = mapped_column(
+        SAEnum(FinalResult), default=FinalResult.PENDING, nullable=False
+    )
+    investment_decision: Mapped[InvestmentDecision] = mapped_column(
+        SAEnum(InvestmentDecision), default=InvestmentDecision.NONE, nullable=False
     )

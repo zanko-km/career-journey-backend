@@ -1,6 +1,6 @@
 import pytest
 from datetime import date
-from app.models import Employee, Onboarding, OnboardingPhase, OnboardingTask
+from app.models import Employee, Onboarding, OnboardingStatus
 
 
 @pytest.mark.asyncio
@@ -13,5 +13,5 @@ async def test_onboarding_can_be_created_for_employee(db_session):
     db_session.add(onboarding)
     await db_session.flush()
 
-    assert onboarding.status.value == "MONTH_1"
+    assert onboarding.status == OnboardingStatus.NOT_STARTED
     assert onboarding.duration_months == 3

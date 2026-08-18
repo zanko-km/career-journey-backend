@@ -12,6 +12,12 @@ import enum
 class EmployeeStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
+    EXITED = "EXITED"
+
+
+class ExitType(str, enum.Enum):
+    RESIGNATION = "RESIGNATION"
+    TERMINATION = "TERMINATION"
 
 
 class Employee(Base):
@@ -19,7 +25,7 @@ class Employee(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    username: Mapped[str]
+    username: Mapped[str] = mapped_column(unique=True)
     full_name: Mapped[str]
     nickname: Mapped[str | None]
 
@@ -32,6 +38,9 @@ class Employee(Base):
         default=EmployeeStatus.ACTIVE,
         nullable=False,
     )
+
+    exit_type: Mapped[ExitType | None] = mapped_column(SAEnum(ExitType))
+
     manager_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id"))
     team_id: Mapped[int | None] = mapped_column(ForeignKey("teams.id"))
     position_id: Mapped[int | None] = mapped_column(ForeignKey("positions.id"))
