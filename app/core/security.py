@@ -1,6 +1,6 @@
 import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException, status
+from fastapi.security import HTTPBearer
 from jwt import PyJWKClient
 
 from app.core.config import settings
@@ -13,14 +13,9 @@ jwks_client = PyJWKClient(
 )
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-):
-    token = credentials.credentials
-
+def decode_token(token: str) -> dict:
     try:
         signing_key = jwks_client.get_signing_key_from_jwt(token)
-
         payload = jwt.decode(
             token,
             signing_key.key,
@@ -28,13 +23,10 @@ async def get_current_user(
             audience=settings.auth_audience,
             issuer=settings.auth_issuer,
         )
-
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
 
-    return {
-        "user_id": payload["sub"],
-    }
+    return payload

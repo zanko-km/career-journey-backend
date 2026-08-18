@@ -5,7 +5,10 @@ app = FastAPI(
     title = "Career Journey API",
     version = "0.1.0"
 )
-app.include_router(auth_router)
+app.include_router(
+    auth_router,
+    prefix="/api/v1"
+    )
 
 @app.get("/health")
 async def health_check():

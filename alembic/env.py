@@ -6,7 +6,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-
+from app.models import User, Employee
 
 
 from app.core.config import settings
@@ -69,17 +69,19 @@ async def run_async_migrations() -> None:
 
     """
 
+    url = config.get_main_option("sqlalchemy.url") or settings.database_url
+ 
     connectable = async_engine_from_config(
         {
-            "sqlalchemy.url": settings.database_url,
+            "sqlalchemy.url": url,
         },
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-
+ 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
-
+ 
     await connectable.dispose()
 
 
