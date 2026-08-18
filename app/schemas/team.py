@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import relationship
+from app.models.employee import EmployeeStatus, CareerStage
 
 class TeamCreate(BaseModel):
     name: str
@@ -60,8 +60,9 @@ class TeamEmployeeOut(BaseModel):
         alias="jobTitle"
     )
 
-    status: str
-    career_stage: str = Field(
+    status: EmployeeStatus
+
+    career_stage: CareerStage = Field(
         alias="careerStage"
     )
     onboarding_phase: int | None = Field(
