@@ -83,6 +83,19 @@ class Employee(Base):
         back_populates="employees",
     )
 
+    manager = relationship(
+        "Employee",
+        remote_side=[id],
+        foreign_keys=[manager_id],
+        back_populates="direct_reports",
+    )
+
+    direct_reports = relationship(
+        "Employee",
+        foreign_keys=[manager_id],
+        back_populates="manager",
+    )
+    
     position = relationship(
         "Position",
         back_populates="employees",
@@ -99,6 +112,12 @@ class Employee(Base):
         back_populates="employee",
         foreign_keys="Onboarding.employee_id",
         uselist=False,
+    )
+    
+    roles = relationship(
+        "EmployeeRole",
+        back_populates="employee",
+        cascade="all, delete-orphan",
     )
     
     @property

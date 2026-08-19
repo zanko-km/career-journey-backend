@@ -3,6 +3,7 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.teams import router as teams_router
 from app.core.exceptions import APIException
 from app.core.exception_handlers import api_exception_handler
+from app.api.routes.employees import router as employee_router
 
 tags_metadata = [
     {
@@ -12,6 +13,10 @@ tags_metadata = [
     {
         "name": "Teams",
         "description": "Team structure, team membership, managers, and HRBP assignments."
+    },
+    {
+        "name": "Employees",
+        "description": "Employee creation, profile management, visibility, status, and employee-scoped resources."
     }
 ]
 
@@ -35,6 +40,8 @@ app.include_router(
     teams_router,
     tags=["Teams"]
     )
+
+app.include_router(employee_router, tags=["Employees"])
 
 @app.get("/health")
 async def health_check():

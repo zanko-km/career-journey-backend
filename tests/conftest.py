@@ -84,7 +84,9 @@ async def db_session():
             yield session
         finally:
             await session.close()
-            await transaction.rollback()
+
+            if transaction.is_active:
+                await transaction.rollback()
 
     await engine.dispose()
 
