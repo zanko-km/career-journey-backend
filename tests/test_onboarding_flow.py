@@ -31,10 +31,17 @@ async def test_advance_from_phase_1_to_phase_2(db_session):
     onboarding = await onboarding_service.start_onboarding(employee_id=emp.id, start_date=date.today())
 
     meeting = await meeting_service.schedule(
-        hrbp.id, emp.id, datetime.now(), onboarding_id=onboarding.id, onboarding_month=1
+        organizer_id=hrbp.id,
+        participant_ids=[emp.id],
+        scheduled_at=datetime.now(),
+        onboarding_id=onboarding.id,
+        onboarding_month=1,
     )
     await meeting_service.confirm(meeting.id)
-    await meeting_service.mark_held(meeting.id)
+    await meeting_service.mark_held(
+        meeting.id,
+        emp.id,
+    )
 
     updated = await onboarding_service.advance_to_next_phase(onboarding.id)
     assert updated.current_phase_number == 2
@@ -57,10 +64,19 @@ async def test_cannot_advance_without_a_held_meeting_for_current_phase(db_sessio
 async def _bring_onboarding_to_final_decision(onboarding_service, meeting_service, emp, hrbp, onboarding):
     for phase in (1, 2, 3):
         meeting = await meeting_service.schedule(
-            hrbp.id, emp.id, datetime.now(), onboarding_id=onboarding.id, onboarding_month=phase
+            organizer_id=hrbp.id,
+            participant_ids=[emp.id],
+            scheduled_at=datetime.now(),
+            onboarding_id=onboarding.id,
+            onboarding_month=phase,
         )
+
         await meeting_service.confirm(meeting.id)
-        await meeting_service.mark_held(meeting.id)
+
+        await meeting_service.mark_held(
+            meeting.id,
+            emp.id,
+        )
         onboarding = await onboarding_service.advance_to_next_phase(onboarding.id)
     return onboarding
 
