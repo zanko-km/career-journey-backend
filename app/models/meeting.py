@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 import enum
 
@@ -18,15 +18,26 @@ class Meeting(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    organizer_id: Mapped[int] = mapped_column(ForeignKey("employees.id"))
-    participant_id: Mapped[int] = mapped_column(ForeignKey("employees.id"))
+    organizer_id: Mapped[int] = mapped_column(
+        ForeignKey("employees.id")
+    )
 
-    onboarding_id: Mapped[int | None] = mapped_column(ForeignKey("onboardings.id"))
+    onboarding_id: Mapped[int | None] = mapped_column(
+        ForeignKey("onboardings.id")
+    )
+
     onboarding_month: Mapped[int | None]
 
     scheduled_at: Mapped[datetime]
+
     status: Mapped[MeetingStatus] = mapped_column(
         SAEnum(MeetingStatus),
         default=MeetingStatus.SCHEDULED,
         nullable=False,
+    )
+
+    participants = relationship(
+        "MeetingParticipant",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
     )
