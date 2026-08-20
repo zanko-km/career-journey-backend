@@ -21,7 +21,7 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 from app.core.database import get_db
 from app.main import app
-
+from app.models.employee_role import EmployeeRole
 
 
 ALEMBIC_INI_PATH = Path(__file__).resolve().parent.parent / "alembic.ini"
@@ -121,8 +121,21 @@ async def provisioned_test_employee(db_session):
         "password": settings.test_user_password,
     })
 
-    employee = Employee(username="test@gmail.com", full_name="Test Employee", join_date=date.today())
+    employee = Employee(
+        username="test@gmail.com",
+        full_name="Test Employee",
+        join_date=date.today()
+    )
+
     db_session.add(employee)
+    await db_session.flush()
+
+    role = EmployeeRole(
+        employee_id=employee.id,
+        role="EMPLOYEE",
+    )
+
+    db_session.add(role)
     await db_session.flush()
 
     user = User(auth_provider_id=str(response.user.id), employee_id=employee.id)

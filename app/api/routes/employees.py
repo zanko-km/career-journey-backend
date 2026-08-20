@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from app.core.current_user import AuthenticatedUser, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +24,11 @@ from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
 from app.models.onboarding_feedback import OnboardingFeedback
 from app.services.onboarding import OnboardingService
-from app.models import Meeting, MeetingParticipant
+from app.models import Meeting, MeetingParticipant, Competency, EmployeeCompetency, CompetencyCycle
+from app.schemas.competency import CompetencyResponse, AssignEmployeeCompetenciesRequest
+from app.schemas.competency_cycle import CompetencyCycleResponse, CompetencyCycleCreateRequest
+from app.models.competency_cycle import CompetencyCycleStatus, CompetencyCyclePhase
+
 
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
@@ -96,157 +100,6 @@ async def get_employees(
         return result.scalars().all()
 
     return []
-
-@router.get(
-    "/{employee_id}",
-    response_model=EmployeeDetailOut,
-    responses={
-        401: {
-            "description": "Unauthorized",
-            "model" : ErrorResponse
-        },
-        403: {
-            "description": "Forbidden",
-            "model" : ErrorResponse
-        },
-        404: {
-            "description": "Conflict",
-            "model" : ErrorResponse
-        },
-        422: {
-            "description": "Validation Error",
-            "model" : ErrorResponse
-        },
-    },
-    openapi_extra={
-        "x-allowed-roles": [
-            "MANAGER",
-            "HRBP",
-            "HR_MANAGER",
-        ],
-    },
-)
-async def get_employee(
-    employee_id: int,
-    current_user: AuthenticatedUser = Depends(
-        require_roles("MANAGER", "HRBP", "HR_MANAGER")
-    ),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(Employee)
-        .options(
-            selectinload(Employee.position),
-
-            selectinload(Employee.team).selectinload(
-                Team.department
-            ),
-
-            selectinload(Employee.team).selectinload(
-                Team.team_manager
-            ),
-
-            selectinload(Employee.team).selectinload(
-                Team.hrbps
-            ),
-
-            selectinload(Employee.manager),
-
-            selectinload(Employee.onboarding).selectinload(
-                Onboarding.buddy
-            ),
-
-            selectinload(Employee.roles),
-        )
-        .where(
-            Employee.id == employee_id
-        )
-    )
-
-    employee = result.scalar_one_or_none()
-
-    if employee is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Employee not found",
-        )
-
-    if "MANAGER" in current_user.roles:
-        if employee.manager_id != current_user.employee_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Forbidden",
-            )
-
-    if "HRBP" in current_user.roles:
-        result = await db.execute(
-            select(HrbpTeamAssignment).where(
-                HrbpTeamAssignment.hrbp_id == current_user.employee_id,
-                HrbpTeamAssignment.team_id == employee.team_id,
-            )
-        )
-
-        if result.scalar_one_or_none() is None:
-            raise HTTPException(
-                status_code=403,
-                detail="Forbidden",
-            )
-
-    roles = [
-        role.role
-        for role in employee.roles
-    ]
-
-    hrbp = None
-
-    if employee.team:
-        result = await db.execute(
-            select(Employee)
-            .join(
-                HrbpTeamAssignment,
-                HrbpTeamAssignment.hrbp_id == Employee.id,
-            )
-            .where(
-                HrbpTeamAssignment.team_id == employee.team_id
-            )
-        )
-
-        hrbp = result.scalar_one_or_none()
-    return EmployeeDetailOut(
-        id=employee.id,
-        username=employee.username,
-        fullName=employee.full_name,
-        nickname=employee.nickname,
-        joinDate=employee.join_date,
-        monthlySalary=employee.monthly_salary,
-
-        position=employee.position,
-        team=employee.team,
-
-        buddy=(
-            employee.onboarding.buddy
-            if employee.onboarding
-            else None
-        ),
-
-        hrManager=None,
-        hrbp=hrbp,
-
-        directManager=employee.manager,
-
-        teamManager=(
-            employee.team.team_manager
-            if employee.team
-            else None
-        ),
-
-        onboarding=employee.onboarding,
-
-        nextActions=[],
-
-        status=employee.status,
-        roles=roles,
-    )
 
 @router.patch(
     "/{employee_id}/status",
@@ -1776,3 +1629,507 @@ async def notify_manager_after_hrbp(
     )
 
     return result.scalar_one()
+
+
+@router.get(
+    "/{employee_id}/competencies",
+    response_model=list[CompetencyResponse],
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+        403: {
+            "description": "Forbidden",
+            "model": ErrorResponse,
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+        },
+    },
+)
+async def list_employee_competencies(
+    employee_id: int,
+    current_user: AuthenticatedUser = Depends(
+        require_roles(
+            "EMPLOYEE",
+            "MANAGER",
+            "HRBP",
+            "HR_MANAGER",
+        )
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+
+    employee = await db.get(
+        Employee,
+        employee_id,
+    )
+
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee not found",
+        )
+
+
+    if (
+        "HR_MANAGER" not in current_user.roles
+    ):
+        if (
+            "EMPLOYEE" in current_user.roles
+            and current_user.employee_id != employee_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed",
+            )
+
+
+
+    result = await db.execute(
+        select(Competency)
+        .join(
+            EmployeeCompetency,
+            EmployeeCompetency.competency_id == Competency.id,
+        )
+        .where(
+            EmployeeCompetency.employee_id == employee_id
+        )
+        .where(
+            Competency.active.is_(True)
+        )
+        .order_by(
+            Competency.name
+        )
+    )
+
+    return result.scalars().all()
+
+
+@router.post(
+    "/{employee_id}/competencies",
+    response_model=list[CompetencyResponse],
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+        403: {
+            "description": "Forbidden",
+            "model": ErrorResponse,
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+        },
+        409: {
+            "description": "Conflict",
+            "model": ErrorResponse,
+        },
+    },
+)
+async def assign_employee_competencies(
+    employee_id: int,
+    payload: AssignEmployeeCompetenciesRequest,
+    current_user: AuthenticatedUser = Depends(
+        require_roles(
+            "HRBP",
+            "HR_MANAGER",
+        )
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+
+    employee_result = await db.execute(
+        select(Employee).where(
+            Employee.id == employee_id
+        )
+    )
+
+    employee = employee_result.scalar_one_or_none()
+
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found",
+        )
+
+
+    competency_result = await db.execute(
+        select(Competency).where(
+            Competency.id.in_(payload.competencyIds)
+        )
+    )
+
+    competencies = competency_result.scalars().all()
+
+
+    if len(competencies) != len(
+        payload.competencyIds
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail="Competency not found",
+        )
+
+
+    existing_result = await db.execute(
+        select(EmployeeCompetency).where(
+            EmployeeCompetency.employee_id == employee_id,
+            EmployeeCompetency.competency_id.in_(
+                payload.competencyIds
+            )
+        )
+    )
+
+    existing = existing_result.scalars().all()
+
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="Competency already assigned",
+        )
+
+
+    assignments = [
+        EmployeeCompetency(
+            employee_id=employee_id,
+            competency_id=competency.id,
+        )
+        for competency in competencies
+    ]
+
+    db.add_all(assignments)
+
+    await db.commit()
+
+
+    return competencies
+
+@router.post(
+    "/{employee_id}/competency-cycles",
+    response_model=CompetencyCycleResponse,
+    status_code=201,
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+        403: {
+            "description": "Forbidden",
+            "model": ErrorResponse,
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+        },
+        409: {
+            "description": "Conflict",
+            "model": ErrorResponse,
+        },
+        422: {
+            "description": "Validation error",
+            "model": ErrorResponse,
+        },
+    },
+    openapi_extra={
+        "x-allowed-roles": [
+            "HRBP",
+            "HR_MANAGER",
+        ],
+        "x-business-rules": [
+            "A newly created cycle starts in ACTIVE status.",
+            "endDate is optional and must not be used as an automatic Competency Review trigger.",
+            "Competency Review starts only through POST /competency-cycles/{cycleId}/start-review by an authorized HRBP or HR_MANAGER.",
+        ],
+    },
+)
+async def create_competency_cycle(
+    employee_id: int,
+    payload: CompetencyCycleCreateRequest,
+    current_user: AuthenticatedUser = Depends(
+        require_roles(
+            "HRBP",
+            "HR_MANAGER",
+        )
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    employee_result = await db.execute(
+        select(Employee).where(
+            Employee.id == employee_id
+        )
+    )
+
+    employee = employee_result.scalar_one_or_none()
+
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found",
+        )
+
+    cycle = CompetencyCycle(
+        employee_id=employee_id,
+        start_date=payload.startDate,
+        end_date=payload.endDate,
+        status=CompetencyCycleStatus.ACTIVE,
+        phase=CompetencyCyclePhase.RATING,
+    )
+
+    db.add(cycle)
+
+    await db.commit()
+    await db.refresh(cycle)
+
+    return {
+        "id": cycle.id,
+        "employeeId": cycle.employee_id,
+        "startDate": cycle.start_date,
+        "endDate": cycle.end_date,
+        "status": cycle.status,
+        "phase": cycle.phase,
+        "meetingNotes": cycle.meeting_notes,
+        "meetingCompleted": cycle.meeting_completed,
+        "focusEndsAt": cycle.focus_ends_at,
+        "reviewStartedAt": cycle.review_started_at,
+        "focusCompetencies": [],
+        "reviewStartedBy": None,
+    }
+
+@router.get(
+    "/{employee_id}/competency-cycles",
+    response_model=list[CompetencyCycleResponse],
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+        403: {
+            "description": "Forbidden",
+            "model": ErrorResponse,
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+        },
+    },
+)
+async def list_competency_cycles(
+    employee_id: int,
+
+    current_user: AuthenticatedUser = Depends(
+        require_roles(
+            "EMPLOYEE",
+            "MANAGER",
+            "HRBP",
+            "HR_MANAGER",
+        )
+    ),
+
+    db: AsyncSession = Depends(get_db),
+):
+
+    employee_result = await db.execute(
+        select(Employee).where(
+            Employee.id == employee_id
+        )
+    )
+
+    employee = employee_result.scalar_one_or_none()
+
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found",
+        )
+
+
+    if (
+        "EMPLOYEE" in current_user.roles
+        and current_user.employee_id != employee_id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden",
+        )
+
+
+    result = await db.execute(
+        select(CompetencyCycle)
+        .where(
+            CompetencyCycle.employee_id == employee_id
+        )
+        .options(
+            selectinload(
+                CompetencyCycle.focus_competencies
+            ),
+            selectinload(
+                CompetencyCycle.review_started_by
+            ),
+        )
+        .order_by(
+            CompetencyCycle.start_date.desc()
+        )
+    )
+
+
+    return result.scalars().all()
+
+
+
+
+@router.get(
+    "/{employee_id}",
+    response_model=EmployeeDetailOut,
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model" : ErrorResponse
+        },
+        403: {
+            "description": "Forbidden",
+            "model" : ErrorResponse
+        },
+        404: {
+            "description": "Conflict",
+            "model" : ErrorResponse
+        },
+        422: {
+            "description": "Validation Error",
+            "model" : ErrorResponse
+        },
+    },
+    openapi_extra={
+        "x-allowed-roles": [
+            "MANAGER",
+            "HRBP",
+            "HR_MANAGER",
+        ],
+    },
+)
+async def get_employee(
+    employee_id: int,
+    current_user: AuthenticatedUser = Depends(
+        require_roles("MANAGER", "HRBP", "HR_MANAGER")
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Employee)
+        .options(
+            selectinload(Employee.position),
+
+            selectinload(Employee.team).selectinload(
+                Team.department
+            ),
+
+            selectinload(Employee.team).selectinload(
+                Team.team_manager
+            ),
+
+            selectinload(Employee.team).selectinload(
+                Team.hrbps
+            ),
+
+            selectinload(Employee.manager),
+
+            selectinload(Employee.onboarding).selectinload(
+                Onboarding.buddy
+            ),
+
+            selectinload(Employee.roles),
+        )
+        .where(
+            Employee.id == employee_id
+        )
+    )
+
+    employee = result.scalar_one_or_none()
+
+    if employee is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found",
+        )
+
+    if "MANAGER" in current_user.roles:
+        if employee.manager_id != current_user.employee_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden",
+            )
+
+    if "HRBP" in current_user.roles:
+        result = await db.execute(
+            select(HrbpTeamAssignment).where(
+                HrbpTeamAssignment.hrbp_id == current_user.employee_id,
+                HrbpTeamAssignment.team_id == employee.team_id,
+            )
+        )
+
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden",
+            )
+
+    roles = [
+        role.role
+        for role in employee.roles
+    ]
+
+    hrbp = None
+
+    if employee.team:
+        result = await db.execute(
+            select(Employee)
+            .join(
+                HrbpTeamAssignment,
+                HrbpTeamAssignment.hrbp_id == Employee.id,
+            )
+            .where(
+                HrbpTeamAssignment.team_id == employee.team_id
+            )
+        )
+
+        hrbp = result.scalar_one_or_none()
+    return EmployeeDetailOut(
+        id=employee.id,
+        username=employee.username,
+        fullName=employee.full_name,
+        nickname=employee.nickname,
+        joinDate=employee.join_date,
+        monthlySalary=employee.monthly_salary,
+
+        position=employee.position,
+        team=employee.team,
+
+        buddy=(
+            employee.onboarding.buddy
+            if employee.onboarding
+            else None
+        ),
+
+        hrManager=None,
+        hrbp=hrbp,
+
+        directManager=employee.manager,
+
+        teamManager=(
+            employee.team.team_manager
+            if employee.team
+            else None
+        ),
+
+        onboarding=employee.onboarding,
+
+        nextActions=[],
+
+        status=employee.status,
+        roles=roles,
+    )

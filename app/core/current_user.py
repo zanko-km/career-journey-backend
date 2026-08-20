@@ -61,7 +61,10 @@ async def load_authenticated_user(
         employee_id=employee.id,
         username=employee.username,
         full_name=employee.full_name,
-        roles=[EmployeeRoleType.EMPLOYEE] + [EmployeeRoleType(role) for role in extra_roles],
+        roles=list(dict.fromkeys(
+            [EmployeeRoleType.EMPLOYEE]
+            + [EmployeeRoleType(role) for role in extra_roles]
+        )),
     )
 
 

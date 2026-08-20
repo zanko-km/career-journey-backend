@@ -119,7 +119,10 @@ class Employee(Base):
         back_populates="employee",
         cascade="all, delete-orphan",
     )
-    
+    competencies = relationship(
+        "EmployeeCompetency",
+        back_populates="employee",
+    )
     @property
     def job_title(self) -> str | None:
         if self.position is None:

@@ -12,9 +12,18 @@ from app.models.department import Department
 from app.models.meeting_participant import MeetingParticipant
 from app.models.development_plan import DevelopmentPlan
 from app.models.onboarding_feedback import OnboardingFeedback
+from app.models.competency import Competency
+from app.models.employee_competency import EmployeeCompetency
+from app.models.competency_cycle import CompetencyCycle
+from app.models.competency_self_assessment import CompetencySelfAssessment
+from app.models.competency_manager_assessment import CompetencyManagerAssessment
+from app.models.development_plan_items import DevelopmentPlanItem
+
 
 
 __all__ = ["User", "Employee", "EmployeeStatus", "ExitType", "EmployeeRole", "Position", "Team",
-           "HrbpTeamAssignment","MeetingParticipant","DevelopmentPlan","OnboardingFeedback",
+           "HrbpTeamAssignment","MeetingParticipant","DevelopmentPlan","CompetencyManagerAssessment",
+           "OnboardingFeedback","Competency","EmployeeCompetency","CompetencyCycle","CompetencySelfAssessment"
            "Onboarding", "OnboardingStatus", "OnboardingPhase", "OnboardingTask", "Meeting", "MeetingStatus",
-           "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus", "Department"]
+           "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus", "Department",
+           "CompetencySelfAssessment", "DevelopmentPlanItem"]
