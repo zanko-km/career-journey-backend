@@ -12,7 +12,7 @@ from app.schemas.competency_cycle import (
     SelfAssessmentRequest, ManagerAssessmentRequest, CompetencyRadarData)
 from app.models.user import EmployeeRoleType
 from app.schemas.development_plan import DevelopmentPlanResponse, DevelopmentPlanUpsertRequest, DevelopmentPlanItemResponse
-from app.models import DevelopmentPlanItem
+from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
 
 
 router = APIRouter(tags=["Employees"])
@@ -555,6 +555,10 @@ async def get_development_plan(
         },
     },
 )
+@router.post(
+    "/competency-cycles/{cycle_id}/idp",
+    response_model=list[DevelopmentPlanItemResponse],
+)
 async def submit_development_plan(
     cycle_id: int,
     payload: DevelopmentPlanUpsertRequest,
@@ -566,10 +570,9 @@ async def submit_development_plan(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    
+    # 1. Get cycle
     result = await db.execute(
-        select(CompetencyCycle)
-        .where(
+        select(CompetencyCycle).where(
             CompetencyCycle.id == cycle_id
         )
     )
@@ -581,7 +584,8 @@ async def submit_development_plan(
             status_code=404,
             detail="Competency cycle not found",
         )
-        
+
+    # 2. Employee permission
     if (
         EmployeeRoleType.EMPLOYEE in current_user.roles
         and cycle.employee_id != current_user.employee_id
@@ -590,46 +594,89 @@ async def submit_development_plan(
             status_code=403,
             detail="Forbidden",
         )
+
+    # 3. Determine author role
+    author_role = (
+        EmployeeRoleType.HRBP
+        if EmployeeRoleType.HRBP in current_user.roles
+        else EmployeeRoleType.EMPLOYEE
+    )
+
+    # 4. HRBP permission
+    if author_role == EmployeeRoleType.HRBP:
+        has_access = await db.execute(
+            select(Employee.id)
+            .join(Team, Employee.team_id == Team.id)
+            .join(
+                HrbpTeamAssignment,
+                HrbpTeamAssignment.team_id == Team.id,
+            )
+            .where(
+                Employee.id == cycle.employee_id,
+                HrbpTeamAssignment.hrbp_id
+                == current_user.employee_id,
+            )
+        )
+
+        if has_access.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=403,
+                detail="HRBP cannot access this employee",
+            )
+
+    # 5. Completed cycle cannot change
+    if cycle.status == CompetencyCycleStatus.COMPLETED:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot submit IDP for completed cycle",
+        )
+
     saved_items = []
 
     for item in payload.items:
 
-        assigned_competency = await db.execute(
+        # 6. Competency assignment check
+        assigned = await db.execute(
             select(EmployeeCompetency).where(
-                EmployeeCompetency.employee_id == cycle.employee_id,
-                EmployeeCompetency.competency_id == item.competencyId,
+                EmployeeCompetency.employee_id
+                == cycle.employee_id,
+                EmployeeCompetency.competency_id
+                == item.competencyId,
             )
         )
 
-        if assigned_competency.scalar_one_or_none() is None:
+        if assigned.scalar_one_or_none() is None:
             raise HTTPException(
                 status_code=400,
                 detail="Competency is not assigned to this employee",
             )
 
-
-        existing = await db.execute(
+        # 7. Upsert
+        result = await db.execute(
             select(DevelopmentPlanItem).where(
                 DevelopmentPlanItem.cycle_id == cycle.id,
-                DevelopmentPlanItem.competency_id == item.competencyId,
-                DevelopmentPlanItem.author_id == current_user.employee_id,
-                DevelopmentPlanItem.author_role == EmployeeRoleType.EMPLOYEE,
+                DevelopmentPlanItem.competency_id
+                == item.competencyId,
+                DevelopmentPlanItem.author_id
+                == current_user.employee_id,
+                DevelopmentPlanItem.author_role
+                == author_role,
             )
         )
 
-        item_db = existing.scalar_one_or_none()
-
+        item_db = result.scalar_one_or_none()
 
         if item_db:
             item_db.comment = item.comment
             item_db.task = item.task
             item_db.completed = item.completed
+
         else:
             item_db = DevelopmentPlanItem(
                 cycle_id=cycle.id,
                 competency_id=item.competencyId,
                 author_id=current_user.employee_id,
-                author_role=EmployeeRoleType.EMPLOYEE,
+                author_role=author_role,
                 comment=item.comment,
                 task=item.task,
                 completed=item.completed,
@@ -638,7 +685,7 @@ async def submit_development_plan(
             db.add(item_db)
 
         saved_items.append(item_db)
-            
+
     await db.commit()
 
     for item in saved_items:

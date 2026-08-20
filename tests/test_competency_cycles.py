@@ -16,7 +16,7 @@ from app.models.competency_self_assessment import CompetencySelfAssessment
 from app.models.competency_manager_assessment import CompetencyManagerAssessment
 from app.models.development_plan_items import DevelopmentPlanItem
 from sqlalchemy import select
-
+from app.models import HrbpTeamAssignment, Team, Department
 
 @pytest.mark.asyncio
 async def test_employee_can_list_own_competency_cycles(
@@ -2038,3 +2038,417 @@ async def test_employee_idp_multiple_items_created(
     items = result.scalars().all()
 
     assert len(items) == 2
+    
+    
+@pytest.mark.asyncio
+async def test_hrbp_can_submit_idp_item(
+    client,
+    db_session,
+):
+    employee = Employee(
+        username="employee",
+        full_name="Employee",
+        join_date=date.today(),
+    )
+
+    hrbp = Employee(
+        username="hrbp",
+        full_name="HRBP",
+        join_date=date.today(),
+    )
+
+    manager = Employee(
+        username="manager",
+        full_name="Manager",
+        join_date=date.today(),
+    )
+
+    db_session.add_all([
+        employee,
+        hrbp,
+        manager,
+    ])
+
+    await db_session.commit()
+
+    department = Department(
+        name="Engineering",
+    )
+
+    db_session.add(department)
+    await db_session.commit()
+
+    team = Team(
+        name="Backend Team",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(team)
+
+    await db_session.commit()
+
+    db_session.add_all([
+        employee,
+        hrbp,
+        team,
+    ])
+    await db_session.commit()
+
+    assignment = HrbpTeamAssignment(
+        hrbp_id=hrbp.id,
+        team_id=team.id,
+    )
+
+    db_session.add(assignment)
+
+    await db_session.commit()
+    
+    employee.team_id = team.id
+
+
+    competency = Competency(
+        name="Python",
+        description="Python",
+        active=True,
+    )
+
+    db_session.add(competency)
+    await db_session.commit()
+
+    db_session.add(
+        EmployeeCompetency(
+            employee_id=employee.id,
+            competency_id=competency.id,
+        )
+    )
+
+    cycle = CompetencyCycle(
+        employee_id=employee.id,
+        start_date=date.today(),
+        end_date=date.today(),
+        status=CompetencyCycleStatus.REVIEW_PENDING,
+        phase=CompetencyCyclePhase.RATING,
+    )
+
+    db_session.add(cycle)
+    await db_session.commit()
+
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        id=2,
+        employee_id=hrbp.id,
+        username="hrbp",
+        full_name="HRBP",
+        roles=[EmployeeRoleType.HRBP],
+    )
+
+
+    response = await client.post(
+        f"/competency-cycles/{cycle.id}/idp",
+        json={
+            "items": [
+                {
+                    "competencyId": competency.id,
+                    "comment": "Improve Python",
+                    "completed": False,
+                }
+            ]
+        },
+    )
+
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["authorRole"] == "HRBP"
+    assert data[0]["authorId"] == hrbp.id
+    
+    
+@pytest.mark.asyncio
+async def test_hrbp_cannot_submit_idp_for_unassigned_team_employee(
+    client,
+    db_session,
+):
+
+    employee = Employee(
+        username="employee",
+        full_name="Employee",
+        join_date=date.today(),
+    )
+
+
+    hrbp = Employee(
+        username="hrbp",
+        full_name="HRBP",
+        join_date=date.today(),
+    )
+
+
+    manager = Employee(
+        username="manager",
+        full_name="Manager",
+        join_date=date.today(),
+    )
+
+    db_session.add_all([
+        employee,
+        hrbp,
+        manager,
+    ])
+
+    await db_session.commit()
+
+    department = Department(
+        name="Engineering",
+    )
+
+    db_session.add(department)
+    await db_session.commit()
+
+    team = Team(
+        name="Backend Team",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(team)
+
+    await db_session.commit()
+
+    db_session.add_all([
+        employee,
+        hrbp,
+        team,
+    ])
+
+    await db_session.commit()
+
+
+    employee.team_id = team.id
+
+
+    # HRBP assigned to another team
+    another_team = Team(
+        name="HRBP Team",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(another_team)
+    await db_session.commit()
+
+
+    db_session.add(
+        HrbpTeamAssignment(
+            hrbp_id=hrbp.id,
+            team_id=another_team.id,
+        )
+    )
+
+
+    competency = Competency(
+        name="Python",
+        active=True,
+    )
+
+    db_session.add(competency)
+    await db_session.commit()
+
+
+    cycle = CompetencyCycle(
+        employee_id=employee.id,
+        start_date=date.today(),
+        end_date=date.today(),
+        status=CompetencyCycleStatus.REVIEW_PENDING,
+    )
+
+
+    db_session.add(cycle)
+    await db_session.commit()
+
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        id=2,
+        employee_id=hrbp.id,
+        username="hrbp",
+        full_name="HRBP",
+        roles=[EmployeeRoleType.HRBP],
+    )
+
+
+    response = await client.post(
+        f"/competency-cycles/{cycle.id}/idp",
+        json={
+            "items": [
+                {
+                    "competencyId": competency.id,
+                    "comment": "test",
+                    "completed": False,
+                }
+            ]
+        },
+    )
+
+
+    assert response.status_code == 403
+    
+@pytest.mark.asyncio
+async def test_manager_cannot_submit_idp(
+    client,
+    db_session,
+):
+
+    employee = Employee(
+        username="employee",
+        full_name="Employee",
+        join_date=date.today(),
+    )
+
+
+    manager = Employee(
+        username="manager",
+        full_name="Manager",
+        join_date=date.today(),
+    )
+
+
+    db_session.add_all([
+        employee,
+        manager,
+    ])
+
+    await db_session.commit()
+
+
+    cycle = CompetencyCycle(
+        employee_id=employee.id,
+        start_date=date.today(),
+        end_date=date.today(),
+        status=CompetencyCycleStatus.REVIEW_PENDING,
+    )
+
+    db_session.add(cycle)
+    await db_session.commit()
+
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        id=3,
+        employee_id=manager.id,
+        username="manager",
+        full_name="Manager",
+        roles=[EmployeeRoleType.MANAGER],
+    )
+
+
+    response = await client.post(
+        f"/competency-cycles/{cycle.id}/idp",
+        json={
+            "items": []
+        },
+    )
+
+
+    assert response.status_code == 403
+    
+    
+@pytest.mark.asyncio
+async def test_employee_and_hrbp_idp_are_separated(
+    client,
+    db_session,
+):
+
+    employee = Employee(
+        username="employee",
+        full_name="Employee",
+        join_date=date.today(),
+    )
+
+
+    hrbp = Employee(
+        username="hrbp",
+        full_name="HRBP",
+        join_date=date.today(),
+    )
+
+
+    db_session.add_all([
+        employee,
+        hrbp,
+    ])
+
+    await db_session.commit()
+
+
+    cycle = CompetencyCycle(
+        employee_id=employee.id,
+        start_date=date.today(),
+        end_date=date.today(),
+        status=CompetencyCycleStatus.REVIEW_PENDING,
+    )
+
+    db_session.add(cycle)
+
+
+    competency = Competency(
+        name="Python",
+        active=True,
+    )
+
+    db_session.add(competency)
+
+    await db_session.commit()
+
+
+    db_session.add_all([
+        DevelopmentPlanItem(
+            cycle_id=cycle.id,
+            competency_id=competency.id,
+            author_id=employee.id,
+            author_role=EmployeeRoleType.EMPLOYEE,
+            comment="employee",
+            completed=False,
+        ),
+
+        DevelopmentPlanItem(
+            cycle_id=cycle.id,
+            competency_id=competency.id,
+            author_id=hrbp.id,
+            author_role=EmployeeRoleType.HRBP,
+            comment="hrbp",
+            completed=False,
+        )
+    ])
+
+
+    await db_session.commit()
+
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        id=1,
+        employee_id=employee.id,
+        username="employee",
+        full_name="Employee",
+        roles=[EmployeeRoleType.EMPLOYEE],
+    )
+
+
+    response = await client.get(
+        f"/competency-cycles/{cycle.id}/idp"
+    )
+
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+
+    assert len(data["employeeItems"]) == 1
+    assert len(data["hrbpItems"]) == 1
+
+    assert data["employeeItems"][0]["authorRole"] == "EMPLOYEE"
+    assert data["hrbpItems"][0]["authorRole"] == "HRBP"
+    
+    
