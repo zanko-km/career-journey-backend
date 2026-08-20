@@ -18,12 +18,12 @@ from app.models.competency_cycle import CompetencyCycle
 from app.models.competency_self_assessment import CompetencySelfAssessment
 from app.models.competency_manager_assessment import CompetencyManagerAssessment
 from app.models.development_plan_items import DevelopmentPlanItem
-
+from app.models.notification import Notification
 
 
 __all__ = ["User", "Employee", "EmployeeStatus", "ExitType", "EmployeeRole", "Position", "Team",
            "HrbpTeamAssignment","MeetingParticipant","DevelopmentPlan","CompetencyManagerAssessment",
            "OnboardingFeedback","Competency","EmployeeCompetency","CompetencyCycle","CompetencySelfAssessment"
            "Onboarding", "OnboardingStatus", "OnboardingPhase", "OnboardingTask", "Meeting", "MeetingStatus",
-           "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus", "Department",
+           "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus", "Department","Notification",
            "CompetencySelfAssessment", "DevelopmentPlanItem"]
