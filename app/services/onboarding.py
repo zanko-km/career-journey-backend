@@ -61,25 +61,65 @@ class OnboardingService:
         await self.db.flush()
         return onboarding
 
-    async def submit_employee_decision(self, onboarding_id: int, decision: Decision) -> Onboarding:
+    async def submit_employee_decision(
+        self,
+        onboarding_id: int,
+        decision: Decision
+    ) -> Onboarding:
+
         onboarding = await self._get(onboarding_id)
+
         if onboarding.status != OnboardingStatus.FINAL_DECISION_PENDING:
-            raise ValueError("Employee decision only allowed while FINAL_DECISION_PENDING")
+            raise ValueError(
+                "Employee decision only allowed while FINAL_DECISION_PENDING"
+            )
+
+        if onboarding.employee_decision is not None:
+            raise ValueError(
+                "Employee decision already submitted"
+            )
+
         onboarding.employee_decision = decision
-        await self._finalize_if_both_decided(onboarding)
-        return onboarding
 
-    async def submit_manager_decision(self, onboarding_id: int, decision: Decision) -> Onboarding:
+        await self._finalize_if_both_decided(onboarding)
+
+        await self.db.flush()
+
+        return onboarding
+    
+    
+    async def submit_manager_decision(
+        self,
+        onboarding_id: int,
+        decision: Decision
+    ) -> Onboarding:
+
         onboarding = await self._get(onboarding_id)
+
         if onboarding.status != OnboardingStatus.FINAL_DECISION_PENDING:
-            raise ValueError("Manager decision only allowed while FINAL_DECISION_PENDING")
+            raise ValueError(
+                "Manager decision only allowed while FINAL_DECISION_PENDING"
+            )
+
         onboarding.manager_decision = decision
+
         await self._finalize_if_both_decided(onboarding)
+
+        await self.db.flush()
+
         return onboarding
 
-    async def _finalize_if_both_decided(self, onboarding: Onboarding) -> None:
-        if onboarding.employee_decision is None or onboarding.manager_decision is None:
-            await self.db.flush()
+    async def _finalize_if_both_decided(
+        self,
+        onboarding: Onboarding
+    ) -> None:
+
+        if (
+            onboarding.employee_decision == Decision.EXIT
+            or onboarding.manager_decision == Decision.EXIT
+        ):
+            onboarding.status = OnboardingStatus.EXITED
+            onboarding.final_result = FinalResult.EXIT
             return
 
         if (
@@ -88,8 +128,40 @@ class OnboardingService:
         ):
             onboarding.status = OnboardingStatus.COMPLETED
             onboarding.final_result = FinalResult.CONTINUE
-        else:
-            onboarding.status = OnboardingStatus.EXITED
-            onboarding.final_result = FinalResult.EXIT
+        
+        
+    async def validate_hrbp_month1_meeting(
+        self,
+        onboarding_id: int,
+    ):
+        
+        result = await self.db.execute(
+            select(Meeting)
+            .where(
+                Meeting.onboarding_id == onboarding_id,
+                Meeting.onboarding_month == 1
+            )
+        )
 
-        await self.db.flush()
+        meeting = result.scalar_one_or_none()
+
+
+        if meeting is None:
+            raise ValueError(
+                "Month 1 HRBP meeting not found"
+            )
+
+
+        if meeting.status != MeetingStatus.HELD:
+            raise ValueError(
+                "Month 1 meeting is not held"
+            )
+
+
+        if not meeting.notes:
+            raise ValueError(
+                "Meeting notes are required"
+            )
+
+
+        return meeting

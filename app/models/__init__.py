@@ -10,9 +10,11 @@ from app.models.onboarding_task import OnboardingTask
 from app.models.meeting import Meeting, MeetingStatus
 from app.models.department import Department
 from app.models.meeting_participant import MeetingParticipant
+from app.models.development_plan import DevelopmentPlan
+from app.models.onboarding_feedback import OnboardingFeedback
 
 
 __all__ = ["User", "Employee", "EmployeeStatus", "ExitType", "EmployeeRole", "Position", "Team",
-           "HrbpTeamAssignment","MeetingParticipant",
+           "HrbpTeamAssignment","MeetingParticipant","DevelopmentPlan","OnboardingFeedback",
            "Onboarding", "OnboardingStatus", "OnboardingPhase", "OnboardingTask", "Meeting", "MeetingStatus",
            "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus", "Department"]

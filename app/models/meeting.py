@@ -29,7 +29,7 @@ class Meeting(Base):
     onboarding_month: Mapped[int | None]
 
     scheduled_at: Mapped[datetime]
-
+    notes: Mapped[str | None]
     status: Mapped[MeetingStatus] = mapped_column(
         SAEnum(MeetingStatus),
         default=MeetingStatus.SCHEDULED,

@@ -57,6 +57,13 @@ class Onboarding(Base):
         "Employee",
         foreign_keys=[buddy_id],
     )
+    development_plan = relationship(
+        "DevelopmentPlan",
+        back_populates="onboarding",
+        uselist=False,
+    )
+    
+    
     employee_decision: Mapped[Decision | None] = mapped_column(SAEnum(Decision))
     manager_decision: Mapped[Decision | None] = mapped_column(SAEnum(Decision))
     final_result: Mapped[FinalResult] = mapped_column(
