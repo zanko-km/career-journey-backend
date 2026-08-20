@@ -143,10 +143,10 @@ async def test_participant_can_respond_to_meeting(db_session):
     updated = await service.respond(
         meeting.id,
         participant.id,
-        MeetingResponseStatus.ACCEPTED,
+        MeetingResponseStatus.CONFIRMED,
     )
 
-    assert updated.response_status == MeetingResponseStatus.ACCEPTED
+    assert updated.response_status == MeetingResponseStatus.CONFIRMED
 
 
 @pytest.mark.asyncio
@@ -260,11 +260,11 @@ async def test_participant_can_respond_to_meeting(db_session):
     response = await service.respond(
         meeting.id,
         participant.id,
-        "ACCEPTED",
+        "CONFIRMED",
     )
 
     assert response.employee_id == participant.id
-    assert response.response_status == "ACCEPTED"
+    assert response.response_status == "CONFIRMED"
     
 @pytest.mark.asyncio
 async def test_participants_have_independent_response_status(db_session):
@@ -302,17 +302,17 @@ async def test_participants_have_independent_response_status(db_session):
     await service.respond(
         meeting.id,
         participant1.id,
-        "ACCEPTED",
+        "CONFIRMED",
     )
 
     participant2_response = await service.respond(
         meeting.id,
         participant2.id,
-        "DECLINED",
+        "REJECTED",
     )
 
     assert participant2_response.employee_id == participant2.id
-    assert participant2_response.response_status == "DECLINED"
+    assert participant2_response.response_status == "REJECTED"
     
 @pytest.mark.asyncio
 async def test_meeting_becomes_held_only_when_all_participants_confirm(db_session):
