@@ -7,6 +7,7 @@ import enum
 
 
 class MeetingStatus(str, enum.Enum):
+    PROPOSED = "PROPOSED"
     SCHEDULED = "SCHEDULED"
     CONFIRMED = "CONFIRMED"
     HELD = "HELD"
@@ -27,17 +28,26 @@ class Meeting(Base):
     )
 
     onboarding_month: Mapped[int | None]
-
+    employee_id: Mapped[int | None] = mapped_column(
+        ForeignKey("employees.id")
+    )
     scheduled_at: Mapped[datetime]
     notes: Mapped[str | None]
     status: Mapped[MeetingStatus] = mapped_column(
         SAEnum(MeetingStatus),
-        default=MeetingStatus.SCHEDULED,
+        default=MeetingStatus.PROPOSED,
         nullable=False,
     )
-
+    organizer = relationship(
+        "Employee",
+        foreign_keys=[organizer_id]
+    )
     participants = relationship(
         "MeetingParticipant",
         back_populates="meeting",
         cascade="all, delete-orphan",
+    )
+    employee = relationship(
+        "Employee",
+        foreign_keys=[employee_id]
     )

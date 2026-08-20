@@ -5,6 +5,8 @@ from app.core.exceptions import APIException
 from app.core.exception_handlers import api_exception_handler
 from app.api.routes.employees import router as employee_router
 from app.api.routes.me import router as me_router
+from app.api.routes.meetings import router as meeting_router
+
 
 tags_metadata = [
     {
@@ -44,6 +46,8 @@ app.include_router(
 
 app.include_router(employee_router, tags=["Employees"])
 app.include_router(me_router, tags=["Employees"])
+app.include_router(meeting_router, tags=["Employees"])
+
 
 @app.get("/health")
 async def health_check():

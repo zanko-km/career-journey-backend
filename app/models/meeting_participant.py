@@ -8,8 +8,8 @@ import enum
 
 class MeetingResponseStatus(str, enum.Enum):
     PENDING = "PENDING"
-    ACCEPTED = "ACCEPTED"
-    DECLINED = "DECLINED"
+    CONFIRMED = "CONFIRMED"
+    REJECTED = "REJECTED"
 
 
 class MeetingParticipant(Base):
@@ -42,6 +42,12 @@ class MeetingParticipant(Base):
     )
 
     held_confirmed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    all_required_participants_present: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
         nullable=False,

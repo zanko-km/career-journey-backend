@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
@@ -28,6 +28,7 @@ class MeetingService:
             scheduled_at=scheduled_at,
             onboarding_id=onboarding_id,
             onboarding_month=onboarding_month,
+            status = MeetingStatus.SCHEDULED
         )
 
         for employee_id in participant_ids:
@@ -136,3 +137,25 @@ class MeetingService:
         await self.db.flush()
 
         return participant
+    
+    
+    async def get_visible_meetings(
+        self,
+        employee_id: int,
+    ) -> list[Meeting]:
+
+        result = await self.db.execute(
+            select(Meeting)
+            .outerjoin(
+                MeetingParticipant,
+                MeetingParticipant.meeting_id == Meeting.id,
+            )
+            .where(
+                or_(
+                    Meeting.organizer_id == employee_id,
+                    MeetingParticipant.employee_id == employee_id,
+                )
+            )
+        )
+
+        return result.scalars().unique().all()

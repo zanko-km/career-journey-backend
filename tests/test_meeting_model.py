@@ -26,7 +26,7 @@ async def test_meeting_can_be_created(db_session):
 
     assert meeting.id is not None
     assert meeting.organizer_id == organizer.id
-    assert meeting.status == MeetingStatus.SCHEDULED
+    assert meeting.status == MeetingStatus.PROPOSED
 
 
 @pytest.mark.asyncio
