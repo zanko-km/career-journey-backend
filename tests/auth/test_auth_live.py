@@ -1,3 +1,9 @@
+"""Tests that hit the real Supabase auth service.
+
+These require valid Supabase credentials in the test environment
+(.env.test) and perform a real network sign-in, unlike the rest of
+the auth suite which relies on the faked Supabase admin client.
+"""
 import pytest
 
 
@@ -11,12 +17,3 @@ async def test_real_supabase_token(client, supabase_access_token, provisioned_te
     )
 
     assert response.status_code == 200
-
-@pytest.mark.asyncio
-async def test_login_requires_username_and_password(client):
-    response = await client.post(
-        "/auth/login",
-        json={},
-    )
-
-    assert response.status_code == 422
