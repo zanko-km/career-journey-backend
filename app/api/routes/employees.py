@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.models.employee import Employee
 from app.schemas.employee import EmployeeDetailOut, EmployeeSummary, EmployeeStatusUpdate, EmployeeCreate
 from app.models.hrbp_team_assignment import HrbpTeamAssignment
+from app.models.employee_role import EmployeeRole
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models.team import Team
@@ -30,10 +31,52 @@ from app.schemas.competency_cycle import CompetencyCycleResponse, CompetencyCycl
 from app.models.competency_cycle import CompetencyCycleStatus, CompetencyCyclePhase
 from app.services.notification import notify_employee
 from app.core.scope import require_employee_scope
+from app.core.supabase import get_supabase_admin
+from app.models.user import User
+from supabase import Client
 
 
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
+
+
+async def get_hr_manager_employee(db: AsyncSession) -> Employee | None:
+
+    result = await db.execute(
+        select(Employee)
+        .join(EmployeeRole, EmployeeRole.employee_id == Employee.id)
+        .where(EmployeeRole.role == "HR_MANAGER")
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_next_actions(db: AsyncSession, employee: Employee) -> list[OnboardingTask]:
+    
+    if employee.onboarding is None or employee.onboarding.current_phase_number is None:
+        return []
+
+    phase_result = await db.execute(
+        select(OnboardingPhase).where(
+            OnboardingPhase.onboarding_id == employee.onboarding.id,
+            OnboardingPhase.phase_number == employee.onboarding.current_phase_number,
+        )
+    )
+    phase = phase_result.scalar_one_or_none()
+
+    if phase is None:
+        return []
+
+    tasks_result = await db.execute(
+        select(OnboardingTask)
+        .options(selectinload(OnboardingTask.assigned_by_employee))
+        .where(
+            OnboardingTask.phase_id == phase.id,
+            OnboardingTask.assigned_to == employee.id,
+        )
+        .order_by(OnboardingTask.id)
+    )
+    return list(tasks_result.scalars().all())
 
 
 
@@ -231,6 +274,9 @@ async def update_employee_status(
 
         hrbp = result.scalar_one_or_none()
 
+    hr_manager = await get_hr_manager_employee(db)
+    next_actions = await get_next_actions(db, employee)
+
     return EmployeeDetailOut(
         id=employee.id,
         username=employee.username,
@@ -248,7 +294,7 @@ async def update_employee_status(
             else None
         ),
 
-        hrManager=None,
+        hrManager=hr_manager,
         hrbp=hrbp,
 
         directManager=employee.manager,
@@ -261,7 +307,7 @@ async def update_employee_status(
 
         onboarding=employee.onboarding,
 
-        nextActions=[],
+        nextActions=next_actions,
 
         status=employee.status,
         roles=roles,
@@ -309,6 +355,7 @@ async def create_employee(
         require_roles("HRBP", "HR_MANAGER")
     ),
     db: AsyncSession = Depends(get_db),
+    supabase_admin: Client = Depends(get_supabase_admin),
 ):
     if "HRBP" in current_user.roles:
         result = await db.execute(
@@ -361,6 +408,35 @@ async def create_employee(
     )
 
     db.add(onboarding)
+
+    await db.flush()
+
+    try:
+        auth_response = supabase_admin.auth.admin.create_user(
+            {
+                "email": payload.username,
+                "password": payload.initial_password,
+                "email_confirm": True,
+            }
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to provision authentication account: {exc}",
+        )
+
+    if auth_response.user is None:
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to provision authentication account",
+        )
+
+    user = User(
+        auth_provider_id=str(auth_response.user.id),
+        employee_id=employee.id,
+    )
+
+    db.add(user)
 
     await db.commit()
 
@@ -415,6 +491,9 @@ async def create_employee(
 
         hrbp = result.scalar_one_or_none()
 
+    hr_manager = await get_hr_manager_employee(db)
+    next_actions = await get_next_actions(db, employee)
+
     return EmployeeDetailOut(
         id=employee.id,
         username=employee.username,
@@ -432,7 +511,7 @@ async def create_employee(
             else None
         ),
 
-        hrManager=None,
+        hrManager=hr_manager,
         hrbp=hrbp,
 
         directManager=employee.manager,
@@ -445,7 +524,7 @@ async def create_employee(
 
         onboarding=employee.onboarding,
 
-        nextActions=[],
+        nextActions=next_actions,
 
         status=employee.status,
         roles=roles,
@@ -2218,6 +2297,9 @@ async def get_employee(
         )
 
         hrbp = result.scalar_one_or_none()
+    hr_manager = await get_hr_manager_employee(db)
+    next_actions = await get_next_actions(db, employee)
+
     return EmployeeDetailOut(
         id=employee.id,
         username=employee.username,
@@ -2235,7 +2317,7 @@ async def get_employee(
             else None
         ),
 
-        hrManager=None,
+        hrManager=hr_manager,
         hrbp=hrbp,
 
         directManager=employee.manager,
@@ -2248,7 +2330,7 @@ async def get_employee(
 
         onboarding=employee.onboarding,
 
-        nextActions=[],
+        nextActions=next_actions,
 
         status=employee.status,
         roles=roles,
