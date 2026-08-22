@@ -1,7 +1,12 @@
+<<<<<<< HEAD
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
+=======
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select, or_
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -17,6 +22,11 @@ from app.models import (
     MeetingStatus,
     Team,
 )
+<<<<<<< HEAD
+=======
+from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRequest, MeetingConfirmHeldRequest
+from app.schemas.errors import ErrorResponse
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 from app.models.meeting_participant import MeetingResponseStatus
 from app.models.user import EmployeeRoleType
 from app.schemas.errors import ErrorResponse
@@ -28,7 +38,12 @@ from app.schemas.meeting import (
 )
 from app.services.notification import notify_employee
 
+<<<<<<< HEAD
 router = APIRouter(prefix="/meetings")
+=======
+
+router = APIRouter(prefix="/meetings", tags=["Employees"])
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
 
 async def _can_organize_downward(

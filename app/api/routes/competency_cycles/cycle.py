@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,6 +29,28 @@ from app.schemas.errors import ErrorResponse
 from app.services.notification import notify_employee
 
 router = APIRouter()
+=======
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from datetime import datetime, timezone
+from app.core.current_user import AuthenticatedUser
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.permissions import require_roles
+from app.core.database import get_db
+from app.core.scope import is_hrbp_of_employee
+from sqlalchemy.orm import selectinload
+from app.schemas.errors import ErrorResponse
+from app.models import CompetencyCycle, EmployeeCompetency, CompetencySelfAssessment, CompetencyManagerAssessment, Competency
+from app.schemas.competency_cycle import (
+    CompetencyCycleResponse, CompetencyCycleStatus,
+    SelfAssessmentRequest, ManagerAssessmentRequest, CompetencyRadarData, StartReviewRequest,
+)
+from app.models.user import EmployeeRoleType
+from app.services.notification import notify_employee
+
+
+router = APIRouter(tags=["Employees"])
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
 
 @router.get(
@@ -121,9 +144,12 @@ async def get_competency_cycle(
             "Only allowed while the cycle is ACTIVE.",
             "Sets the deadline (performance review) and the focus competencies for this cycle, "
             "then unlocks self-assessment for the employee.",
+<<<<<<< HEAD
             "meetingScheduledAt is required: a performance-review meeting "
             "with the employee and their direct manager is always created "
             "and both are notified.",
+=======
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
         ],
     },
 )
@@ -191,7 +217,11 @@ async def start_competency_review(
     )
     cycle.focus_competencies = list(competencies_result.scalars().all())
 
+<<<<<<< HEAD
     cycle.review_started_at = datetime.now()
+=======
+    cycle.review_started_at = datetime.now(timezone.utc)
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
     cycle.review_started_by_id = current_user.employee_id
     cycle.focus_ends_at = payload.focusEndsAt
     cycle.status = CompetencyCycleStatus.SELF_ASSESSMENT_PENDING
@@ -205,6 +235,7 @@ async def start_competency_review(
         reference_id=cycle.id,
     )
 
+<<<<<<< HEAD
     # The employee's direct manager must also be notified: they'll need
     # to submit the manager-assessment once self-assessment is done.
     if cycle.employee.manager_id is not None:
@@ -268,6 +299,8 @@ async def start_competency_review(
                 reference_id=meeting.id,
             )
 
+=======
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
     await db.commit()
     await db.refresh(cycle)
 
@@ -280,4 +313,8 @@ async def start_competency_review(
         )
     )
 
+<<<<<<< HEAD
     return result.scalar_one()
+=======
+    return result.scalar_one()
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)

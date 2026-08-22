@@ -15,7 +15,11 @@ from app.models.user import EmployeeRoleType
 from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
 
 
+<<<<<<< HEAD
 router = APIRouter()
+=======
+router = APIRouter(tags=["Employees"])
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
 
 @router.post(

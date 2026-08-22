@@ -10,7 +10,11 @@ from fastapi import APIRouter
 from .queries import router as queries_router
 from .actions import router as actions_router
 
+<<<<<<< HEAD
 router = APIRouter()
+=======
+router = APIRouter(tags=["Employees"])
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
 router.include_router(queries_router)
 router.include_router(actions_router)

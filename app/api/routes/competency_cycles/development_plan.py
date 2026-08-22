@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,6 +28,26 @@ from app.schemas.development_plan import (
 from app.schemas.errors import ErrorResponse
 
 router = APIRouter()
+=======
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from app.core.current_user import AuthenticatedUser
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.permissions import require_roles
+from app.core.database import get_db
+from app.schemas.errors import ErrorResponse
+from app.models import CompetencyCycle, EmployeeCompetency, CompetencySelfAssessment, CompetencyManagerAssessment, Competency
+from app.schemas.competency_cycle import (
+    CompetencyCycleResponse, CompetencyCycleStatus,
+    SelfAssessmentRequest, ManagerAssessmentRequest, CompetencyRadarData, StartReviewRequest,
+)
+from app.models.user import EmployeeRoleType
+from app.schemas.development_plan import DevelopmentPlanResponse, DevelopmentPlanUpsertRequest, DevelopmentPlanItemResponse
+from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
+
+
+router = APIRouter(tags=["Employees"])
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
 
 def development_plan_item_to_response(item):
@@ -74,7 +95,10 @@ async def get_development_plan(
     result = await db.execute(
         select(CompetencyCycle)
         .where(CompetencyCycle.id == cycle_id)
+<<<<<<< HEAD
         .options(selectinload(CompetencyCycle.employee))
+=======
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
     )
 
     cycle = result.scalar_one_or_none()
@@ -87,6 +111,7 @@ async def get_development_plan(
 
 
     if (
+<<<<<<< HEAD
         current_user.employee_id != cycle.employee_id
         and EmployeeRoleType.HR_MANAGER not in current_user.roles
     ):
@@ -107,6 +132,16 @@ async def get_development_plan(
                 detail="Forbidden",
             )
 
+=======
+        EmployeeRoleType.EMPLOYEE in current_user.roles
+        and cycle.employee_id != current_user.employee_id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden",
+        )
+
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
     result = await db.execute(
         select(DevelopmentPlanItem)
@@ -125,10 +160,14 @@ async def get_development_plan(
 
     hrbp_items = [
         item for item in items
+<<<<<<< HEAD
         # HR_MANAGER-authored items are shown in the same "HR side" bucket
         # as HRBP items -- the response only has two buckets (employee vs.
         # HR), and there's no meaningful UI distinction between the two.
         if item.author_role in (EmployeeRoleType.HRBP, EmployeeRoleType.HR_MANAGER)
+=======
+        if item.author_role == EmployeeRoleType.HRBP
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
     ]
 
 
@@ -169,7 +208,10 @@ async def submit_development_plan(
         require_roles(
             "EMPLOYEE",
             "HRBP",
+<<<<<<< HEAD
             "HR_MANAGER",
+=======
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
         )
     ),
     db: AsyncSession = Depends(get_db),
@@ -189,6 +231,7 @@ async def submit_development_plan(
             detail="Competency cycle not found",
         )
 
+<<<<<<< HEAD
     # 2. Employee permission -- only a plain EMPLOYEE (no HRBP/HR_MANAGER
     # role) is restricted to their own cycle. HRBP and HR_MANAGER act on
     # other employees' cycles by design.
@@ -196,6 +239,11 @@ async def submit_development_plan(
         EmployeeRoleType.EMPLOYEE in current_user.roles
         and EmployeeRoleType.HRBP not in current_user.roles
         and EmployeeRoleType.HR_MANAGER not in current_user.roles
+=======
+    # 2. Employee permission
+    if (
+        EmployeeRoleType.EMPLOYEE in current_user.roles
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
         and cycle.employee_id != current_user.employee_id
     ):
         raise HTTPException(
@@ -203,6 +251,7 @@ async def submit_development_plan(
             detail="Forbidden",
         )
 
+<<<<<<< HEAD
     # 3. Determine author role. HR_MANAGER takes priority over HRBP when a
     # user happens to hold both (same precedence as elsewhere in the app,
     # e.g. meeting organizing), since HR_MANAGER is the unrestricted
@@ -211,14 +260,23 @@ async def submit_development_plan(
         EmployeeRoleType.HR_MANAGER
         if EmployeeRoleType.HR_MANAGER in current_user.roles
         else EmployeeRoleType.HRBP
+=======
+    # 3. Determine author role
+    author_role = (
+        EmployeeRoleType.HRBP
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
         if EmployeeRoleType.HRBP in current_user.roles
         else EmployeeRoleType.EMPLOYEE
     )
 
+<<<<<<< HEAD
     # 4. HRBP permission -- scoped to assigned teams. HR_MANAGER is
     # unrestricted (consistent with every other HR_MANAGER-vs-HRBP check
     # in the app), so this scope check only applies to genuine HRBP
     # authors.
+=======
+    # 4. HRBP permission
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
     if author_role == EmployeeRoleType.HRBP:
         has_access = await db.execute(
             select(Employee.id)
@@ -310,4 +368,8 @@ async def submit_development_plan(
     return [
         development_plan_item_to_response(item)
         for item in saved_items
+<<<<<<< HEAD
     ]
+=======
+    ]
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)

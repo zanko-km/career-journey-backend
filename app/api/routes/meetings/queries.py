@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -5,10 +6,17 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+=======
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 from app.core.current_user import AuthenticatedUser
 from app.core.database import get_db
 from app.core.permissions import require_roles
 from app.models import (
+<<<<<<< HEAD
     Employee,
     HrbpTeamAssignment,
     Meeting,
@@ -20,6 +28,19 @@ from app.schemas.meeting import (
 )
 
 router = APIRouter(prefix="/meetings")
+=======
+    Meeting,
+    MeetingParticipant,
+    Employee,
+    HrbpTeamAssignment, MeetingStatus,
+    Team, EmployeeRole,
+)
+from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRequest, MeetingConfirmHeldRequest
+from app.schemas.errors import ErrorResponse
+
+
+router = APIRouter(prefix="/meetings", tags=["Employees"])
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
 
 @router.get(
@@ -34,6 +55,7 @@ router = APIRouter(prefix="/meetings")
             "description": "Forbidden",
             "model": ErrorResponse,
         },
+<<<<<<< HEAD
         422: {
             "description": "Validation Error",
             "model": ErrorResponse,
@@ -45,6 +67,8 @@ router = APIRouter(prefix="/meetings")
             "between now and now + withinDays days. Omit to get the full, "
             "unfiltered list (existing/default behaviour).",
         ],
+=======
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
     },
 )
 async def list_meetings(
@@ -57,6 +81,7 @@ async def list_meetings(
         )
     ),
     db: AsyncSession = Depends(get_db),
+<<<<<<< HEAD
     within_days: int | None = Query(
         default=None,
         alias="withinDays",
@@ -66,6 +91,8 @@ async def list_meetings(
             "(e.g. withinDays=30 for 'next month'). Omitted = no filtering."
         ),
     ),
+=======
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 ):
 
     visible_employee_ids = [
@@ -120,7 +147,11 @@ async def list_meetings(
         visible_employee_ids = all_employee_ids
 
 
+<<<<<<< HEAD
     query = (
+=======
+    result = await db.execute(
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
         select(Meeting)
         .join(
             MeetingParticipant,
@@ -142,6 +173,7 @@ async def list_meetings(
         )
     )
 
+<<<<<<< HEAD
     if within_days is not None:
         now = datetime.now()
 
@@ -152,6 +184,8 @@ async def list_meetings(
 
     result = await db.execute(query)
 
+=======
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
     meetings = result.scalars().unique().all()
 
@@ -229,8 +263,14 @@ async def get_meeting(
     if (
         not allowed
         and "MANAGER" in current_user.roles
+<<<<<<< HEAD
     ) and meeting.employee.manager_id == current_user.employee_id:
         allowed = True
+=======
+    ):
+        if meeting.employee.manager_id == current_user.employee_id:
+            allowed = True
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
 
 
     if (
@@ -268,4 +308,8 @@ async def get_meeting(
         )
 
 
+<<<<<<< HEAD
     return meeting
+=======
+    return meeting
+>>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
