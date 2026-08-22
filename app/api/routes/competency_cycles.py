@@ -18,7 +18,11 @@ from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
 from app.services.notification import notify_employee
 
 
+<<<<<<< HEAD
 router = APIRouter()
+=======
+router = APIRouter(tags=["Employees"])
+>>>>>>> 838e356 (chore: reorganize test suite by domain, fix competency_cycles typo)
 
 @router.get(
     "/competency-cycles/{cycle_id}",
