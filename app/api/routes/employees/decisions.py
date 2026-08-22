@@ -23,7 +23,11 @@ from app.models import Meeting, MeetingParticipant, Competency, EmployeeCompeten
 from app.services.notification import notify_employee
 
 
+<<<<<<< HEAD
 router = APIRouter(prefix="/employees")
+=======
+router = APIRouter(prefix="/employees", tags=["Employees"])
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 
 
 @router.post(

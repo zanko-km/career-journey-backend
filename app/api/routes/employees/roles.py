@@ -16,7 +16,11 @@ from app.schemas.errors import ErrorResponse
 from app.core.scope import require_employee_scope
 
 
+<<<<<<< HEAD
 router = APIRouter(prefix="/employees")
+=======
+router = APIRouter(prefix="/employees", tags=["Employees"])
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 
 
 ASSIGNABLE_ROLES = {

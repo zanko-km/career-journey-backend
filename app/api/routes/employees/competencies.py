@@ -14,7 +14,11 @@ from app.models.competency_cycle import CompetencyCycleStatus, CompetencyCyclePh
 from app.core.scope import require_employee_scope
 
 
+<<<<<<< HEAD
 router = APIRouter(prefix="/employees")
+=======
+router = APIRouter(prefix="/employees", tags=["Employees"])
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 
 
 @router.get(
@@ -101,6 +105,7 @@ async def list_employee_competencies(
             "model": ErrorResponse,
         },
     },
+<<<<<<< HEAD
     openapi_extra={
         "x-allowed-roles": [
             "MANAGER",
@@ -115,13 +120,18 @@ async def list_employee_competencies(
             "HR_MANAGER is unrestricted.",
         ],
     },
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 )
 async def assign_employee_competencies(
     employee_id: int,
     payload: AssignEmployeeCompetenciesRequest,
     current_user: AuthenticatedUser = Depends(
         require_roles(
+<<<<<<< HEAD
             "MANAGER",
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
             "HRBP",
             "HR_MANAGER",
         )

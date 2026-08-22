@@ -17,10 +17,16 @@ from app.schemas.onboarding import (
 )
 from app.models.onboarding_feedback import OnboardingFeedback
 from app.core.scope import require_employee_scope
+<<<<<<< HEAD
 from app.services.notification import notify_employee
 
 
 router = APIRouter(prefix="/employees")
+=======
+
+
+router = APIRouter(prefix="/employees", tags=["Employees"])
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 
 
 @router.get(
@@ -214,6 +220,7 @@ async def create_employee_onboarding_feedback(
 
     db.add(feedback)
 
+<<<<<<< HEAD
     await db.flush()
 
     # Notify the employee's direct manager that month-1 HRBP feedback has
@@ -231,6 +238,8 @@ async def create_employee_onboarding_feedback(
             reference_id=feedback.id,
         )
 
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     await db.commit()
 
     await db.refresh(feedback)
@@ -248,4 +257,8 @@ async def create_employee_onboarding_feedback(
         )
     )
 
+<<<<<<< HEAD
     return result.scalar_one()
+=======
+    return result.scalar_one()
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)

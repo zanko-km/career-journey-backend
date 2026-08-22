@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -20,6 +21,30 @@ from app.schemas.onboarding import (
 )
 
 router = APIRouter(prefix="/employees",)
+=======
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from app.core.current_user import AuthenticatedUser, get_current_user
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.permissions import require_roles
+from app.core.database import get_db
+from app.models.employee import Employee
+from app.models.onboarding import Onboarding, OnboardingStatus
+from app.schemas.errors import ErrorResponse
+from app.schemas.onboarding import (
+    OnboardingOut, StartOnboardingRequest,
+    UpdateOnboardingRequest, OnboardingPhaseOut, OnboardingPhaseCreate,
+    PhaseStatus, OnboardingActionOut, OnboardingActionCreate,
+    OnboardingFeedbackOut, OnboardingFeedbackCreate,
+    EmployeeDecisionRequest, EmployeeDecisionResponse, ManagerDecisionRequest,
+)
+from app.models.onboarding_phase import OnboardingPhase
+from app.models.onboarding_task import OnboardingTask
+from app.core.scope import require_employee_scope
+
+
+router = APIRouter(prefix="/employees", tags=["Employees"])
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 
 
 @router.get(
@@ -38,10 +63,13 @@ router = APIRouter(prefix="/employees",)
             "description": "Not found",
             "model": ErrorResponse,
         },
+<<<<<<< HEAD
         422: {
             "description": "Validation Error",
             "model": ErrorResponse,
         },
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     },
     openapi_extra={
         "x-allowed-roles": [
@@ -50,11 +78,14 @@ router = APIRouter(prefix="/employees",)
             "HRBP",
             "HR_MANAGER",
         ],
+<<<<<<< HEAD
         "x-query-params": [
             "withinDays (optional, int >= 1): only return tasks due between "
             "today and today + withinDays days. Omit to get the full, "
             "unfiltered list (existing/default behaviour).",
         ],
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     },
 )
 async def get_employee_onboarding_actions(
@@ -69,6 +100,7 @@ async def get_employee_onboarding_actions(
     ),
     _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
+<<<<<<< HEAD
     within_days: int | None = Query(
         default=None,
         alias="withinDays",
@@ -78,6 +110,8 @@ async def get_employee_onboarding_actions(
             "(e.g. withinDays=30 for 'next month'). Omitted = no filtering."
         ),
     ),
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 ):
 
     result = await db.execute(
@@ -97,7 +131,11 @@ async def get_employee_onboarding_actions(
         )
 
 
+<<<<<<< HEAD
     task_query = (
+=======
+    result = await db.execute(
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
         select(OnboardingTask)
         .join(
             OnboardingPhase,
@@ -108,6 +146,7 @@ async def get_employee_onboarding_actions(
         )
     )
 
+<<<<<<< HEAD
     if within_days is not None:
         today = date.today()
 
@@ -119,6 +158,8 @@ async def get_employee_onboarding_actions(
 
     result = await db.execute(task_query)
 
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     tasks = result.scalars().all()
 
 
@@ -179,6 +220,7 @@ async def get_employee_onboarding_actions(
     },
     openapi_extra={
         "x-allowed-roles": [
+<<<<<<< HEAD
             "MANAGER",
             "HRBP",
             "HR_MANAGER",
@@ -193,6 +235,11 @@ async def get_employee_onboarding_actions(
             "employee's team, so this scoping does not break that flow).",
             "HR_MANAGER is unrestricted.",
         ],
+=======
+            "HRBP",
+            "HR_MANAGER",
+        ],
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     },
 )
 async def create_employee_onboarding_action(
@@ -200,7 +247,10 @@ async def create_employee_onboarding_action(
     payload: OnboardingActionCreate,
     current_user: AuthenticatedUser = Depends(
         require_roles(
+<<<<<<< HEAD
             "MANAGER",
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
             "HRBP",
             "HR_MANAGER",
         )
@@ -208,6 +258,7 @@ async def create_employee_onboarding_action(
     db: AsyncSession = Depends(get_db),
 ):
 
+<<<<<<< HEAD
     employee_result = await db.execute(
         select(Employee).where(
             Employee.id == employee_id
@@ -250,6 +301,8 @@ async def create_employee_onboarding_action(
                 detail="HRBP can only create tasks for employees in assigned teams",
             )
 
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     result = await db.execute(
         select(Onboarding)
         .where(
@@ -320,4 +373,10 @@ async def create_employee_onboarding_action(
         dueDate=task.due_date,
         status=task.status,
         createdBy=creator,
+<<<<<<< HEAD
     )
+=======
+    )
+    
+    
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)

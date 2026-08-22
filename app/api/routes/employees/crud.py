@@ -4,7 +4,11 @@ from app.core.current_user import AuthenticatedUser, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import require_roles
 from app.core.database import get_db
+<<<<<<< HEAD
 from app.models.employee import Employee, EmployeeStatus
+=======
+from app.models.employee import Employee
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 from app.schemas.employee import (
     EmployeeDetailOut, EmployeeSummary, EmployeeStatusUpdate, EmployeeCreate,
     EmployeeRoleAssignRequest, EmployeeRolesOut,
@@ -14,7 +18,11 @@ from app.models.employee_role import EmployeeRole
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models.team import Team
+<<<<<<< HEAD
 from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
+=======
+from app.models.onboarding import Onboarding, OnboardingStatus
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 from app.schemas.errors import ErrorResponse
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -24,7 +32,11 @@ from app.models.user import User
 from supabase import Client
 
 
+<<<<<<< HEAD
 router = APIRouter(prefix="/employees")
+=======
+router = APIRouter(prefix="/employees", tags=["Employees"])
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 
 
 async def get_hr_manager_employee(db: AsyncSession) -> Employee | None:
@@ -154,6 +166,7 @@ async def get_employees(
             "HRBP",
             "HR_MANAGER",
         ],
+<<<<<<< HEAD
         "x-business-rules": [
             "This is how the HRBP records the continue/exit decision made "
             "at the end of onboarding (or at any other time).",
@@ -163,6 +176,8 @@ async def get_employees(
             "status back to ACTIVE while FINAL_DECISION_PENDING finalizes "
             "it as COMPLETED.",
         ],
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     },
 )
 async def update_employee_status(
@@ -210,6 +225,7 @@ async def update_employee_status(
             detail="Employee not found",
         )
 
+<<<<<<< HEAD
     if payload.status == EmployeeStatus.EXITED:
         if payload.exit_type is None:
             raise HTTPException(
@@ -249,6 +265,10 @@ async def update_employee_status(
             employee.onboarding.status = OnboardingStatus.COMPLETED
             employee.onboarding.final_result = FinalResult.CONTINUE
 
+=======
+    employee.status = payload.status
+
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
     await db.commit()
 
     result = await db.execute(
@@ -338,7 +358,10 @@ async def update_employee_status(
         nextActions=next_actions,
 
         status=employee.status,
+<<<<<<< HEAD
         exitType=employee.exit_type,
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
         roles=roles,
     )
     
@@ -556,7 +579,10 @@ async def create_employee(
         nextActions=next_actions,
 
         status=employee.status,
+<<<<<<< HEAD
         exitType=employee.exit_type,
+=======
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
         roles=roles,
     )
     
@@ -714,6 +740,11 @@ async def get_employee(
         nextActions=next_actions,
 
         status=employee.status,
+<<<<<<< HEAD
         exitType=employee.exit_type,
         roles=roles,
     )
+=======
+        roles=roles,
+    )
+>>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
