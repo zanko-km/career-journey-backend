@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Onboarding, OnboardingStatus, Decision, FinalResult
 from app.models import Meeting, MeetingStatus
+from app.models.employee import Employee, EmployeeStatus, ExitType
 
 
 class OnboardingService:
@@ -64,7 +65,8 @@ class OnboardingService:
     async def submit_employee_decision(
         self,
         onboarding_id: int,
-        decision: Decision
+        decision: Decision,
+        exit_type: ExitType | None = None,
     ) -> Onboarding:
 
         onboarding = await self._get(onboarding_id)
@@ -79,9 +81,12 @@ class OnboardingService:
                 "Employee decision already submitted"
             )
 
+        if decision == Decision.EXIT and exit_type is None:
+            exit_type = ExitType.RESIGNATION
+
         onboarding.employee_decision = decision
 
-        await self._finalize_if_both_decided(onboarding)
+        await self._finalize_if_both_decided(onboarding, exit_type)
 
         await self.db.flush()
 
@@ -91,7 +96,8 @@ class OnboardingService:
     async def submit_manager_decision(
         self,
         onboarding_id: int,
-        decision: Decision
+        decision: Decision,
+        exit_type: ExitType | None = None,
     ) -> Onboarding:
 
         onboarding = await self._get(onboarding_id)
@@ -101,9 +107,14 @@ class OnboardingService:
                 "Manager decision only allowed while FINAL_DECISION_PENDING"
             )
 
+        if decision == Decision.EXIT and exit_type is None:
+            raise ValueError(
+                "exit_type is required when the manager decision is EXIT"
+            )
+
         onboarding.manager_decision = decision
 
-        await self._finalize_if_both_decided(onboarding)
+        await self._finalize_if_both_decided(onboarding, exit_type)
 
         await self.db.flush()
 
@@ -111,7 +122,8 @@ class OnboardingService:
 
     async def _finalize_if_both_decided(
         self,
-        onboarding: Onboarding
+        onboarding: Onboarding,
+        exit_type: ExitType | None = None,
     ) -> None:
 
         if (
@@ -120,6 +132,13 @@ class OnboardingService:
         ):
             onboarding.status = OnboardingStatus.EXITED
             onboarding.final_result = FinalResult.EXIT
+
+            employee = await self.db.get(Employee, onboarding.employee_id)
+            if employee is not None:
+                employee.status = EmployeeStatus.EXITED
+                if exit_type is not None:
+                    employee.exit_type = exit_type
+
             return
 
         if (

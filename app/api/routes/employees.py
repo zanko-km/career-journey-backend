@@ -52,7 +52,7 @@ async def get_hr_manager_employee(db: AsyncSession) -> Employee | None:
 
 
 async def get_next_actions(db: AsyncSession, employee: Employee) -> list[OnboardingTask]:
-    
+
     if employee.onboarding is None or employee.onboarding.current_phase_number is None:
         return []
 
@@ -1451,7 +1451,8 @@ async def submit_employee_decision(
     try:
         onboarding = await service.submit_employee_decision(
             onboarding.id,
-            payload.decision
+            payload.decision,
+            payload.exit_type,
         )
 
         await db.commit()
@@ -1562,7 +1563,8 @@ async def submit_manager_decision(
     try:
         onboarding = await service.submit_manager_decision(
             onboarding.id,
-            payload.decision
+            payload.decision,
+            payload.exit_type,
         )
 
         await db.commit()
@@ -2205,6 +2207,7 @@ async def list_competency_cycles(
     },
     openapi_extra={
         "x-allowed-roles": [
+            "EMPLOYEE",
             "MANAGER",
             "HRBP",
             "HR_MANAGER",
@@ -2214,7 +2217,7 @@ async def list_competency_cycles(
 async def get_employee(
     employee_id: int,
     current_user: AuthenticatedUser = Depends(
-        require_roles("MANAGER", "HRBP", "HR_MANAGER")
+        require_roles("EMPLOYEE", "MANAGER", "HRBP", "HR_MANAGER")
     ),
     db: AsyncSession = Depends(get_db),
 ):
@@ -2256,22 +2259,23 @@ async def get_employee(
             detail="Employee not found",
         )
 
-    if "MANAGER" in current_user.roles:
-        if employee.manager_id != current_user.employee_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Forbidden",
-            )
-
-    if "HRBP" in current_user.roles:
-        result = await db.execute(
-            select(HrbpTeamAssignment).where(
-                HrbpTeamAssignment.hrbp_id == current_user.employee_id,
-                HrbpTeamAssignment.team_id == employee.team_id,
-            )
+    if employee_id != current_user.employee_id and "HR_MANAGER" not in current_user.roles:
+        is_direct_manager = (
+            "MANAGER" in current_user.roles
+            and employee.manager_id == current_user.employee_id
         )
 
-        if result.scalar_one_or_none() is None:
+        is_assigned_hrbp = False
+        if "HRBP" in current_user.roles:
+            hrbp_result = await db.execute(
+                select(HrbpTeamAssignment).where(
+                    HrbpTeamAssignment.hrbp_id == current_user.employee_id,
+                    HrbpTeamAssignment.team_id == employee.team_id,
+                )
+            )
+            is_assigned_hrbp = hrbp_result.scalar_one_or_none() is not None
+
+        if not is_direct_manager and not is_assigned_hrbp:
             raise HTTPException(
                 status_code=403,
                 detail="Forbidden",

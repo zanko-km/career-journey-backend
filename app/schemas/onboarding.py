@@ -8,6 +8,7 @@ from app.models.onboarding import (
     InvestmentDecision,
 )
 from app.models.onboarding_phase import PhaseStatus
+from app.models.employee import ExitType
 from datetime import datetime
 
 
@@ -292,10 +293,22 @@ class OnboardingFeedbackOut(BaseModel):
 
 class EmployeeDecisionRequest(BaseModel):
     decision: Decision
+    exit_type: ExitType | None = Field(
+        default=None,
+        alias="exitType",
+    )
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class ManagerDecisionRequest(BaseModel):
     decision: Decision
+    exit_type: ExitType | None = Field(
+        default=None,
+        alias="exitType",
+    )
+
+    model_config = ConfigDict(populate_by_name=True)
 
 class EmployeeDecisionResponse(BaseModel):
     model_config = ConfigDict(
