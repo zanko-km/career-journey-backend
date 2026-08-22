@@ -24,7 +24,6 @@ class AuthService:
         return response
 
     def logout(self, access_token: str):
-        self.supabase.auth.set_session(access_token, access_token)
         self.supabase.auth.sign_out()
 
     def change_password(self, access_token: str, new_password: str):

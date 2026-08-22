@@ -288,7 +288,8 @@ async def test_manager_cannot_see_other_team_meetings(
         full_name="Manager 2",
         join_date=date.today(),
     )
-
+    db_session.add_all([manager1, manager2])
+    await db_session.flush()
     employee2 = Employee(
         username="employee2",
         full_name="Employee 2",
@@ -699,9 +700,16 @@ async def test_hrbp_can_create_meeting(
     client,
     db_session,
 ):
+
     hrbp = Employee(
         username="hrbp_create",
         full_name="HRBP",
+        join_date=date.today(),
+    )
+
+    manager = Employee(
+        username="manager_create",
+        full_name="Manager",
         join_date=date.today(),
     )
 
@@ -709,18 +717,50 @@ async def test_hrbp_can_create_meeting(
         username="employee_target",
         full_name="Employee Target",
         join_date=date.today(),
+        manager_id=manager.id,
     )
 
     db_session.add_all(
         [
             hrbp,
+            manager,
             employee,
         ]
     )
 
     await db_session.flush()
 
-    from app.main import app
+
+    department = Department(
+        name="Engineering"
+    )
+
+    db_session.add(department)
+    await db_session.flush()
+
+
+    team = Team(
+        name="Backend Team",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(team)
+    await db_session.flush()
+
+
+    employee.team_id = team.id
+
+
+    db_session.add(
+        HrbpTeamAssignment(
+            hrbp_id=hrbp.id,
+            team_id=team.id,
+        )
+    )
+
+    await db_session.commit()
+
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
         id=1,
@@ -745,6 +785,9 @@ async def test_hrbp_can_create_meeting(
             "notes": "meeting",
         },
     )
+
+
+    app.dependency_overrides.clear()
 
 
     assert response.status_code == 201
@@ -911,9 +954,16 @@ async def test_create_meeting_with_past_datetime_returns_422(
     client,
     db_session,
 ):
+
     hrbp = Employee(
         username="hrbp_past",
         full_name="HRBP",
+        join_date=date.today(),
+    )
+
+    manager = Employee(
+        username="manager_past",
+        full_name="Manager",
         join_date=date.today(),
     )
 
@@ -921,35 +971,79 @@ async def test_create_meeting_with_past_datetime_returns_422(
         username="employee_past",
         full_name="Employee",
         join_date=date.today(),
+        manager_id=manager.id,
     )
 
+    db_session.add_all(
+        [
+            hrbp,
+            manager,
+            employee,
+        ]
+    )
 
-    db_session.add_all([hrbp, employee])
     await db_session.flush()
 
 
-    from app.main import app
+    department = Department(
+        name="Engineering"
+    )
+
+    db_session.add(department)
+    await db_session.flush()
+
+
+    team = Team(
+        name="Backend",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(team)
+    await db_session.flush()
+
+
+    employee.team_id = team.id
+
+
+    db_session.add(
+        HrbpTeamAssignment(
+            hrbp_id=hrbp.id,
+            team_id=team.id,
+        )
+    )
+
+    await db_session.commit()
+
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
         id=1,
         employee_id=hrbp.id,
         username="hrbp_past",
         full_name="HRBP",
-        roles=[EmployeeRoleType.HRBP],
+        roles=[
+            EmployeeRoleType.HRBP
+        ],
     )
 
 
     response = await client.post(
         "/meetings",
         json={
-            "type":"ONBOARDING_MONTH_1",
-            "employeeId":employee.id,
-            "scheduledAt":(
+            "type": "ONBOARDING_MONTH_1",
+            "employeeId": employee.id,
+            "scheduledAt": (
                 datetime.now() - timedelta(days=1)
             ).isoformat(),
-            "participantIds":[employee.id],
+            "participantIds": [
+                employee.id
+            ],
+            "notes": "past meeting",
         },
     )
+
+
+    app.dependency_overrides.clear()
 
 
     assert response.status_code == 422
@@ -960,9 +1054,16 @@ async def test_create_meeting_with_duplicate_participants_returns_422(
     client,
     db_session,
 ):
+
     hrbp = Employee(
         username="hrbp_dup",
         full_name="HRBP",
+        join_date=date.today(),
+    )
+
+    manager = Employee(
+        username="manager_dup",
+        full_name="Manager",
         join_date=date.today(),
     )
 
@@ -970,36 +1071,78 @@ async def test_create_meeting_with_duplicate_participants_returns_422(
         username="employee_dup",
         full_name="Employee",
         join_date=date.today(),
+        manager_id=manager.id,
     )
 
+    db_session.add_all(
+        [
+            hrbp,
+            manager,
+            employee,
+        ]
+    )
 
-    db_session.add_all([hrbp, employee])
     await db_session.flush()
 
 
-    from app.main import app
+    department = Department(
+        name="Engineering"
+    )
+
+    db_session.add(department)
+    await db_session.flush()
+
+
+    team = Team(
+        name="Backend Team",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(team)
+    await db_session.flush()
+
+
+    employee.team_id = team.id
+
+
+    db_session.add(
+        HrbpTeamAssignment(
+            hrbp_id=hrbp.id,
+            team_id=team.id,
+        )
+    )
+
+    await db_session.commit()
+
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
         id=1,
         employee_id=hrbp.id,
         username="hrbp_dup",
         full_name="HRBP",
-        roles=[EmployeeRoleType.HRBP],
+        roles=[
+            EmployeeRoleType.HRBP
+        ],
     )
 
 
     response = await client.post(
         "/meetings",
         json={
-            "type":"ONBOARDING_MONTH_1",
-            "employeeId":employee.id,
-            "scheduledAt":datetime.now().isoformat(),
-            "participantIds":[
+            "type": "ONBOARDING_MONTH_1",
+            "employeeId": employee.id,
+            "scheduledAt": datetime.now().isoformat(),
+            "participantIds": [
                 employee.id,
                 employee.id,
             ],
+            "notes": "duplicate participants",
         },
     )
+
+
+    app.dependency_overrides.clear()
 
 
     assert response.status_code == 422

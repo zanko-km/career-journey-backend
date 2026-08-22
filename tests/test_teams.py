@@ -3,6 +3,7 @@ from app.main import app
 from app.core.current_user import AuthenticatedUser, get_current_user
 from datetime import date
 from app.models import Department, Employee, HrbpTeamAssignment, Team
+from app.models.user import EmployeeRoleType
 
 @pytest.mark.asyncio
 async def test_only_hr_manager_can_create_team(client):
@@ -366,11 +367,13 @@ async def test_get_teams_returns_assigned_hrbps(
     await db_session.commit()
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
-        id=1,
-        employee_id=1,
-        username="ali",
-        full_name="Ali",
-        roles=["HRBP"],
+        id=hrbp.id,
+        employee_id=hrbp.id,
+        username="hrbp",
+        full_name="HRBP User",
+        roles=[
+            EmployeeRoleType.HRBP
+        ],
     )
 
     response = await client.get("/teams")
@@ -460,9 +463,16 @@ async def test_hrbp_can_get_team(
     client,
     db_session,
 ):
+
     department = Department(
         name="Engineering",
         description="Backend department",
+    )
+
+    hrbp = Employee(
+        username="hrbp",
+        full_name="HRBP",
+        join_date=date.today(),
     )
 
     manager = Employee(
@@ -472,8 +482,16 @@ async def test_hrbp_can_get_team(
         join_date=date.today(),
     )
 
-    db_session.add_all([department, manager])
+    db_session.add_all(
+        [
+            department,
+            hrbp,
+            manager,
+        ]
+    )
+
     await db_session.flush()
+
 
     team = Team(
         name="Backend",
@@ -482,17 +500,38 @@ async def test_hrbp_can_get_team(
     )
 
     db_session.add(team)
-    await db_session.commit()
 
-    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
-        id=2,
-        employee_id=2,
-        username="hrbp",
-        full_name="HRBP",
-        roles=["HRBP"],
+    await db_session.flush()
+
+
+    db_session.add(
+        HrbpTeamAssignment(
+            hrbp_id=hrbp.id,
+            team_id=team.id,
+        )
     )
 
-    response = await client.get(f"/teams/{team.id}")
+    await db_session.commit()
+
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        id=hrbp.id,
+        employee_id=hrbp.id,
+        username="hrbp",
+        full_name="HRBP",
+        roles=[
+            EmployeeRoleType.HRBP
+        ],
+    )
+
+
+    response = await client.get(
+        f"/teams/{team.id}"
+    )
+
+
+    app.dependency_overrides.clear()
+
 
     assert response.status_code == 200
     

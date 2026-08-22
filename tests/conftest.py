@@ -20,8 +20,10 @@ from app.models.employee import Employee
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 from app.core.database import get_db
+from app.core.supabase import get_supabase_admin
 from app.main import app
 from app.models.employee_role import EmployeeRole
+import uuid
 
 
 ALEMBIC_INI_PATH = Path(__file__).resolve().parent.parent / "alembic.ini"
@@ -54,6 +56,34 @@ def apply_migrations():
     alembic_cfg = Config(str(ALEMBIC_INI_PATH))
     alembic_cfg.set_main_option("sqlalchemy.url", test_settings.database_url)
     command.upgrade(alembic_cfg, "head")
+
+
+class _FakeSupabaseAdminUser:
+    def __init__(self, id: str):
+        self.id = id
+
+
+class _FakeSupabaseAdminCreateUserResponse:
+    def __init__(self):
+        self.user = _FakeSupabaseAdminUser(id=str(uuid.uuid4()))
+
+
+class _FakeSupabaseAdminAuth:
+    class admin:
+        @staticmethod
+        def create_user(payload):
+            return _FakeSupabaseAdminCreateUserResponse()
+
+
+class _FakeSupabaseAdminClient:
+    auth = _FakeSupabaseAdminAuth()
+
+
+@pytest.fixture(autouse=True)
+def override_supabase_admin():
+    app.dependency_overrides[get_supabase_admin] = lambda: _FakeSupabaseAdminClient()
+    yield
+    app.dependency_overrides.pop(get_supabase_admin, None)
 
 
 @pytest_asyncio.fixture

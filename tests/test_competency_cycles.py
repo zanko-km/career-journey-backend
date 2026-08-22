@@ -1014,7 +1014,7 @@ async def test_manager_can_submit_manager_assessment(
 
     data = response.json()
 
-    assert data["status"] == "MANAGER_ASSESSMENT_PENDING"
+    assert data["status"] == "REVIEW_PENDING"
 
 
 

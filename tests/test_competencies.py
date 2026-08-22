@@ -6,6 +6,7 @@ from app.models.user import EmployeeRoleType
 from app.models.competency import Competency
 from app.models.employee_competency import EmployeeCompetency
 from app.models.employee import Employee
+from app.models import Team, Department, HrbpTeamAssignment
 
 @pytest.mark.asyncio
 async def test_employee_can_list_competencies(
@@ -496,9 +497,26 @@ async def test_hrbp_can_assign_competencies(
     client,
     db_session,
 ):
+    department = Department(
+        name="Engineering",
+        description="Backend department",
+    )
+
+    hrbp = Employee(
+        username="hrbp",
+        full_name="HRBP",
+        join_date=date.today(),
+    )
+
     employee = Employee(
         username="employee2",
         full_name="Employee",
+        join_date=date.today(),
+    )
+
+    manager = Employee(
+        username="manager",
+        full_name="Manager",
         join_date=date.today(),
     )
 
@@ -507,29 +525,48 @@ async def test_hrbp_can_assign_competencies(
         active=True,
     )
 
-    db_session.add_all(
-        [
-            employee,
-            competency,
-        ]
+    db_session.add_all([
+        department,
+        hrbp,
+        employee,
+        manager,
+        competency,
+    ])
+
+    await db_session.flush()
+
+    team = Team(
+        name="Backend",
+        department_id=department.id,
+        team_manager_id=manager.id,
     )
+
+    db_session.add(team)
+    await db_session.flush()
+
+    employee.team_id = team.id
+
+    assignment = HrbpTeamAssignment(
+        hrbp_id=hrbp.id,
+        team_id=team.id,
+    )
+
+    db_session.add(assignment)
 
     await db_session.commit()
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
         id=1,
-        employee_id=1,
+        employee_id=hrbp.id,
         username="hrbp",
         full_name="HRBP",
-        roles=[
-            EmployeeRoleType.HRBP
-        ],
+        roles=[EmployeeRoleType.HRBP],
     )
 
     response = await client.post(
         f"/employees/{employee.id}/competencies",
         json={
-            "competencyIds":[competency.id]
+            "competencyIds": [competency.id]
         }
     )
 

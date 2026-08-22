@@ -1,6 +1,6 @@
 import pytest
 from datetime import date, datetime
-from app.models import Employee, OnboardingStatus, Decision
+from app.models import Employee, OnboardingStatus, Decision, ExitType
 from app.services.onboarding import OnboardingService
 from app.services.meeting import MeetingService
 
@@ -134,7 +134,7 @@ async def test_final_decision_exit_when_either_disagrees(db_session):
     )
 
     await onboarding_service.submit_employee_decision(onboarding.id, Decision.CONTINUE)
-    result = await onboarding_service.submit_manager_decision(onboarding.id, Decision.EXIT)
+    result = await onboarding_service.submit_manager_decision(onboarding.id, Decision.EXIT, exit_type=ExitType.RESIGNATION)
 
     assert result.status == OnboardingStatus.EXITED
 

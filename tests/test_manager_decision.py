@@ -142,7 +142,8 @@ async def test_manager_can_submit_exit_decision(
     response = await client.post(
         f"/employees/{employee.id}/onboarding/manager-decision",
         json={
-            "decision": "EXIT"
+            "decision": "EXIT",
+            "exitType": "RESIGNATION"
         },
     )
 

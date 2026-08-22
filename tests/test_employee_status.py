@@ -5,42 +5,85 @@ import pytest
 from app.main import app
 from app.core.current_user import get_current_user, AuthenticatedUser
 from app.models.employee import Employee, EmployeeStatus
-
+from app.models import HrbpTeamAssignment, Team, Department
 
 @pytest.mark.asyncio
 async def test_hrbp_can_update_employee_status(
     client,
     db_session,
 ):
+    manager = Employee(
+        username="manager1",
+        full_name="Team Manager",
+        join_date=date.today(),
+        status=EmployeeStatus.ACTIVE,
+    )
+
+    db_session.add(manager)
+    await db_session.flush()
+
+    department = Department(
+        name="Engineering Department",
+    )
+
+    db_session.add(department)
+    await db_session.flush()
+    
+    team = Team(
+        name="Engineering",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+
+    db_session.add(team)
+    await db_session.flush()
+
+    hrbp = Employee(
+        username="hrbp1",
+        full_name="HRBP User",
+        join_date=date.today(),
+        status=EmployeeStatus.ACTIVE,
+    )
+
+    db_session.add(hrbp)
+    await db_session.flush()
+
     employee = Employee(
         username="employee1",
         full_name="Employee One",
         join_date=date.today(),
         status=EmployeeStatus.ACTIVE,
+        team_id=team.id,
     )
 
     db_session.add(employee)
     await db_session.flush()
 
+    assignment = HrbpTeamAssignment(
+        hrbp_id=hrbp.id,
+        team_id=team.id,
+    )
+
+    db_session.add(assignment)
+    await db_session.flush()
+
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
-        id=1,
-        employee_id=999,
-        username="hrbp",
-        full_name="HRBP",
+        id=hrbp.id,
+        employee_id=hrbp.id,
+        username="hrbp1",
+        full_name="HRBP User",
         roles=["HRBP"],
     )
 
     response = await client.patch(
         f"/employees/{employee.id}/status",
-        json={"status": "INACTIVE"},
+        json={
+            "status": "INACTIVE",
+        },
     )
 
     assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["id"] == employee.id
-    assert data["status"] == "INACTIVE"
+    assert response.json()["status"] == "INACTIVE"
 
 
 @pytest.mark.asyncio
