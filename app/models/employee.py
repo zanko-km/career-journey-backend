@@ -9,21 +9,6 @@ from app.models.position import Position
 import enum
 
 
-@property
-def job_title(self) -> str | None:
-    if self.position is None:
-        return None
-
-    return self.position.title
-
-
-@job_title.setter
-def job_title(self, value: str | None):
-    if value is None:
-        self.position = None
-    else:
-        self.position = Position(title=value)
-
 class EmployeeStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"

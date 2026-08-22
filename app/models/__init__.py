@@ -23,7 +23,7 @@ from app.models.notification import Notification
 
 __all__ = ["User", "Employee", "EmployeeStatus", "ExitType", "EmployeeRole", "Position", "Team",
            "HrbpTeamAssignment","MeetingParticipant","DevelopmentPlan","CompetencyManagerAssessment",
-           "OnboardingFeedback","Competency","EmployeeCompetency","CompetencyCycle","CompetencySelfAssessment"
+           "OnboardingFeedback","Competency","EmployeeCompetency","CompetencyCycle","CompetencySelfAssessment",
            "Onboarding", "OnboardingStatus", "OnboardingPhase", "OnboardingTask", "Meeting", "MeetingStatus",
            "Decision", "FinalResult", "InvestmentDecision", "PhaseStatus", "Department","Notification",
            "CompetencySelfAssessment", "DevelopmentPlanItem"]
