@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.schemas.auth import AuthResponse, UserSummary
 from app.core.security import bearer_scheme
 from fastapi.security import HTTPAuthorizationCredentials
-from app.schemas.auth import RefreshRequest
+from app.schemas.auth import RefreshRequest, ChangePasswordRequest
 from app.schemas.errors import ErrorResponse
 
 
@@ -134,5 +134,43 @@ async def logout(
     auth_service: AuthService = Depends(get_auth_service),
 ):
     auth_service.logout(credentials.credentials)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/change-password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    openapi_extra={
+        "x-allowed-roles": [
+            "EMPLOYEE",
+            "MANAGER",
+            "HRBP",
+            "HR_MANAGER",
+        ]
+    },
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        }
+    },
+)
+async def change_password(
+    payload: ChangePasswordRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    try:
+        auth_service.change_password(
+            credentials.credentials,
+            payload.newPassword.get_secret_value(),
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not change password",
+        )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

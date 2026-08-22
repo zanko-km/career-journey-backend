@@ -22,3 +22,7 @@ class AuthResponse(BaseModel):
     
 class RefreshRequest(BaseModel):
     refreshToken: str
+
+
+class ChangePasswordRequest(BaseModel):
+    newPassword: SecretStr
