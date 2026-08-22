@@ -4,8 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.permissions import require_roles
+from app.core.scope import require_team_scope
+from app.core.current_user import AuthenticatedUser, get_current_user
 from app.models import Team, Employee, HrbpTeamAssignment
-from app.schemas.team import TeamCreate, TeamOut, TeamEmployeeOut
+from app.schemas.team import TeamCreate, TeamOut, TeamEmployeeOut, HrbpTeamAssignmentCreate, HrbpTeamAssignmentOut
 from sqlalchemy.orm import selectinload
 from app.schemas.errors import ErrorResponse
 
@@ -101,6 +103,7 @@ async def get_team(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_team_scope("team_id")),
 ):
     result = await db.execute(
         select(Team)
@@ -166,6 +169,7 @@ async def get_team_employees(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_team_scope("team_id")),
 ):
     team_result = await db.execute(
         select(Team.id).where(Team.id == team_id)
@@ -231,7 +235,7 @@ async def get_team_employees(
 )
 async def list_teams(
     db: AsyncSession = Depends(get_db),
-    _user=Depends(
+    current_user: AuthenticatedUser = Depends(
         require_roles(
             "MANAGER",
             "HRBP",
@@ -239,13 +243,141 @@ async def list_teams(
         )
     ),
 ):
-    result = await db.execute(
-        select(Team)
-        .options(
-            selectinload(Team.department),
-            selectinload(Team.team_manager),
-            selectinload(Team.hrbps)
-        )
+    query = select(Team).options(
+        selectinload(Team.department),
+        selectinload(Team.team_manager),
+        selectinload(Team.hrbps)
     )
 
+    if "HR_MANAGER" not in current_user.roles:
+        if "HRBP" in current_user.roles:
+            query = query.join(
+                HrbpTeamAssignment,
+                HrbpTeamAssignment.team_id == Team.id,
+            ).where(HrbpTeamAssignment.hrbp_id == current_user.employee_id)
+        elif "MANAGER" in current_user.roles:
+            query = query.where(Team.team_manager_id == current_user.employee_id)
+
+    result = await db.execute(query)
+
     return result.scalars().all()
+
+
+@router.post(
+    "/{team_id}/hrbps",
+    response_model=HrbpTeamAssignmentOut,
+    status_code=201,
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+        403: {
+            "description": "Forbidden",
+            "model": ErrorResponse,
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+        },
+        409: {
+            "description": "Conflict",
+            "model": ErrorResponse,
+        },
+    },
+    openapi_extra={
+        "x-allowed-roles": [
+            "HR_MANAGER",
+        ]
+    },
+)
+async def assign_hrbp_to_team(
+    team_id: int,
+    payload: HrbpTeamAssignmentCreate,
+    db: AsyncSession = Depends(get_db),
+    _user=Depends(require_roles("HR_MANAGER")),
+):
+    if payload.team_id != team_id:
+        raise HTTPException(
+            status_code=422,
+            detail="teamId in body must match the URL",
+        )
+
+    team = await db.get(Team, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    hrbp = await db.get(Employee, payload.hrbp_id)
+    if hrbp is None:
+        raise HTTPException(status_code=404, detail="HRBP employee not found")
+
+    existing = (
+        await db.execute(
+            select(HrbpTeamAssignment).where(
+                HrbpTeamAssignment.hrbp_id == payload.hrbp_id,
+                HrbpTeamAssignment.team_id == team_id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="HRBP is already assigned to this team",
+        )
+
+    assignment = HrbpTeamAssignment(
+        hrbp_id=payload.hrbp_id,
+        team_id=team_id,
+    )
+    db.add(assignment)
+
+    await db.commit()
+    await db.refresh(assignment)
+
+    return assignment
+
+
+@router.delete(
+    "/{team_id}/hrbps/{hrbp_id}",
+    status_code=204,
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+        403: {
+            "description": "Forbidden",
+            "model": ErrorResponse,
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+        },
+    },
+    openapi_extra={
+        "x-allowed-roles": [
+            "HR_MANAGER",
+        ]
+    },
+)
+async def unassign_hrbp_from_team(
+    team_id: int,
+    hrbp_id: int,
+    db: AsyncSession = Depends(get_db),
+    _user=Depends(require_roles("HR_MANAGER")),
+):
+    existing = (
+        await db.execute(
+            select(HrbpTeamAssignment).where(
+                HrbpTeamAssignment.hrbp_id == hrbp_id,
+                HrbpTeamAssignment.team_id == team_id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is None:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    await db.delete(existing)
+    await db.commit()

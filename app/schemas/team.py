@@ -16,6 +16,26 @@ class TeamCreate(BaseModel):
         "populate_by_name": True
     }
 
+
+class HrbpTeamAssignmentCreate(BaseModel):
+    hrbp_id: int = Field(alias="hrbpId")
+    team_id: int = Field(alias="teamId")
+
+    model_config = {
+        "populate_by_name": True
+    }
+
+
+class HrbpTeamAssignmentOut(BaseModel):
+    id: int
+    hrbp_id: int = Field(alias="hrbpId")
+    team_id: int = Field(alias="teamId")
+
+    model_config = {
+        "from_attributes": True,
+        "populate_by_name": True,
+    }
+
 class DepartmentOut(BaseModel):
     id: int
     name: str
