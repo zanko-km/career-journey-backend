@@ -1,13 +1,33 @@
 import pytest
 
 
-
 @pytest.mark.asyncio
 async def test_missing_token_returns_401(client):
     response = await client.get("/auth/me")
 
     assert response.status_code == 401
-    
+
+
+@pytest.mark.asyncio
+async def test_invalid_token_returns_401(client):
+    response = await client.get(
+        "/auth/me",
+        headers={"Authorization": "Bearer invalid-token"},
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_login_requires_username_and_password(client):
+    response = await client.post(
+        "/auth/login",
+        json={},
+    )
+
+    assert response.status_code == 422
+
+
 @pytest.mark.asyncio
 async def test_login_returns_auth_response(client, provisioned_test_employee):
     response = await client.post(
@@ -33,6 +53,7 @@ async def test_login_returns_auth_response(client, provisioned_test_employee):
     assert "username" in user
     assert "fullName" in user
     assert "roles" in user
+
 
 @pytest.mark.asyncio
 async def test_refresh_returns_new_tokens(client, provisioned_test_employee):
