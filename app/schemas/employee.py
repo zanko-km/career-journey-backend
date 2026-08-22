@@ -233,3 +233,20 @@ class EmployeeDetailOut(BaseModel):
     
 class EmployeeStatusUpdate(BaseModel):
     status: EmployeeStatus
+
+
+class EmployeeRoleAssignRequest(BaseModel):
+    role: str = Field(
+        description="One of MANAGER, HRBP, HR_MANAGER. "
+        "The base EMPLOYEE role is implicit and cannot be assigned/removed."
+    )
+
+
+class EmployeeRolesOut(BaseModel):
+    employee_id: int = Field(alias="employeeId")
+    roles: list[str]
+
+    model_config = {
+        "from_attributes": True,
+        "populate_by_name": True,
+    }

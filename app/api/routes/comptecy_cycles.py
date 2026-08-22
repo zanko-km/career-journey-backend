@@ -526,14 +526,27 @@ async def get_radar_data(
         item.competency_id: item.score
         for item in manager_assessment_rows
     }
+
     if (
-        EmployeeRoleType.EMPLOYEE in current_user.roles
-        and current_user.employee_id != cycle.employee_id
+        current_user.employee_id != cycle.employee_id
+        and EmployeeRoleType.HR_MANAGER not in current_user.roles
     ):
-        raise HTTPException(
-            status_code=403,
-            detail="Forbidden",
+        is_direct_manager = (
+            EmployeeRoleType.MANAGER in current_user.roles
+            and cycle.employee.manager_id == current_user.employee_id
         )
+
+        is_assigned_hrbp = False
+        if EmployeeRoleType.HRBP in current_user.roles:
+            is_assigned_hrbp = await is_hrbp_of_employee(
+                db, current_user.employee_id, cycle.employee_id
+            )
+
+        if not is_direct_manager and not is_assigned_hrbp:
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden",
+            )
 
     self_result = await db.execute(
         select(CompetencySelfAssessment).where(

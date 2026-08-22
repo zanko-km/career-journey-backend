@@ -12,15 +12,85 @@ from app.models import (
     Meeting,
     MeetingParticipant,
     Employee,
-    HrbpTeamAssignment,MeetingStatus
+    HrbpTeamAssignment, MeetingStatus,
+    Team, EmployeeRole,
 )
 
 from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRequest, MeetingConfirmHeldRequest
 from app.schemas.errors import ErrorResponse
 from app.models.meeting_participant import MeetingResponseStatus
 from app.models import Employee
+from app.models.user import EmployeeRoleType
 from app.services.notification import notify_employee
 router = APIRouter(prefix="/meetings", tags=["Employees"])
+
+
+async def _can_organize_downward(
+    db: AsyncSession,
+    current_user: AuthenticatedUser,
+    employee: Employee,
+) -> bool:
+    """Existing behaviour: a Manager/HRBP/HR Manager organizing a meeting
+    *about* someone they manage/support (organizer sits above the subject)."""
+
+    if EmployeeRoleType.HR_MANAGER in current_user.roles:
+        return True
+
+    if EmployeeRoleType.MANAGER in current_user.roles:
+        if employee.manager_id == current_user.employee_id:
+            return True
+
+    if EmployeeRoleType.HRBP in current_user.roles:
+        assignment_result = await db.execute(
+            select(HrbpTeamAssignment).where(
+                HrbpTeamAssignment.hrbp_id == current_user.employee_id,
+                HrbpTeamAssignment.team_id == employee.team_id,
+            )
+        )
+        if assignment_result.scalar_one_or_none() is not None:
+            return True
+
+    return False
+
+
+async def _upward_allowed_target_ids(
+    db: AsyncSession,
+    employee: Employee,
+) -> set[int]:
+    """The set of people `employee` is allowed to request a meeting with:
+    their direct manager, their team manager (one layer up), any HRBP
+    assigned to their team, and any HR Manager. This is what lets an
+    Employee meet their Manager/TeamManager/HRBP/HR Manager, a Manager
+    meet their own manager, and an HRBP meet the HR Manager."""
+
+    allowed_ids: set[int] = set()
+
+    if employee.manager_id is not None:
+        allowed_ids.add(employee.manager_id)
+
+    if employee.team_id is not None:
+        team = await db.get(Team, employee.team_id)
+
+        if team is not None and team.team_manager_id is not None:
+            allowed_ids.add(team.team_manager_id)
+
+        hrbp_result = await db.execute(
+            select(HrbpTeamAssignment.hrbp_id).where(
+                HrbpTeamAssignment.team_id == employee.team_id
+            )
+        )
+        allowed_ids.update(hrbp_result.scalars().all())
+
+    hr_manager_result = await db.execute(
+        select(EmployeeRole.employee_id).where(
+            EmployeeRole.role == EmployeeRoleType.HR_MANAGER.value
+        )
+    )
+    allowed_ids.update(hr_manager_result.scalars().all())
+
+    allowed_ids.discard(employee.id)
+
+    return allowed_ids
 
 
 @router.get(
@@ -152,6 +222,7 @@ async def create_meeting(
     payload: MeetingCreate,
     current_user: AuthenticatedUser = Depends(
         require_roles(
+            "EMPLOYEE",
             "MANAGER",
             "HRBP",
             "HR_MANAGER",
@@ -170,26 +241,26 @@ async def create_meeting(
             detail="Employee not found"
         )
 
+    # Case A: organizer sits above the subject in the org chart
+    # (Manager/HRBP/HR Manager organizing a meeting about someone they
+    # manage or support). This is the pre-existing "downward" flow.
+    allowed = await _can_organize_downward(db, current_user, employee)
 
-    if "MANAGER" in current_user.roles:
-        if employee.manager_id != current_user.employee_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Cannot create meeting for employee outside your team"
-            )
+    # Case B: organizer is requesting a meeting about themself with
+    # someone above them (direct manager, team manager, assigned HRBP,
+    # or HR Manager). Covers Employee -> Manager/TeamManager/HRBP/HRManager,
+    # Manager -> own manager, and HRBP -> HR Manager.
+    if not allowed and employee.id == current_user.employee_id:
+        allowed_target_ids = await _upward_allowed_target_ids(db, employee)
 
-    if "HRBP" in current_user.roles and "HR_MANAGER" not in current_user.roles:
-        assignment_result = await db.execute(
-            select(HrbpTeamAssignment).where(
-                HrbpTeamAssignment.hrbp_id == current_user.employee_id,
-                HrbpTeamAssignment.team_id == employee.team_id,
-            )
+        if payload.participant_ids and set(payload.participant_ids).issubset(allowed_target_ids):
+            allowed = True
+
+    if not allowed:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not allowed to organize a meeting for this employee/participants"
         )
-        if assignment_result.scalar_one_or_none() is None:
-            raise HTTPException(
-                status_code=403,
-                detail="Cannot create meeting for employee outside your assigned teams"
-            )
 
 
     if payload.scheduled_at < datetime.now() - timedelta(seconds=5):
