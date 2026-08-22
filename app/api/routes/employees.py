@@ -24,10 +24,12 @@ from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
 from app.models.onboarding_feedback import OnboardingFeedback
 from app.services.onboarding import OnboardingService
-from app.models import Meeting, MeetingParticipant, Competency, EmployeeCompetency, CompetencyCycle
+from app.models import Meeting, MeetingParticipant, Competency, EmployeeCompetency, CompetencyCycle, MeetingStatus
 from app.schemas.competency import CompetencyResponse, AssignEmployeeCompetenciesRequest
 from app.schemas.competency_cycle import CompetencyCycleResponse, CompetencyCycleCreateRequest
 from app.models.competency_cycle import CompetencyCycleStatus, CompetencyCyclePhase
+from app.services.notification import notify_employee
+from app.core.scope import require_employee_scope
 
 
 
@@ -135,6 +137,7 @@ async def update_employee_status(
     current_user: AuthenticatedUser = Depends(
         require_roles("HRBP", "HR_MANAGER")
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -483,6 +486,7 @@ async def get_employee_onboarding(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -545,6 +549,7 @@ async def start_employee_onboarding(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -642,6 +647,7 @@ async def update_employee_onboarding(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -737,6 +743,7 @@ async def get_employee_onboarding_phases(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -899,6 +906,7 @@ async def get_employee_onboarding_actions(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1116,6 +1124,7 @@ async def get_employee_onboarding_feedback(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1613,6 +1622,14 @@ async def notify_manager_after_hrbp(
 
     onboarding.status = OnboardingStatus.IN_PROGRESS
 
+    await notify_employee(
+        db,
+        employee_id=employee_id,
+        type="ONBOARDING_PHASE_ADVANCED",
+        message="Your onboarding has moved to month 2. Your manager will schedule a meeting to set your tasks.",
+        reference_type="ONBOARDING",
+        reference_id=onboarding.id,
+    )
 
     await db.commit()
 
@@ -1626,6 +1643,121 @@ async def notify_manager_after_hrbp(
         .where(
             Onboarding.id == onboarding.id
         )
+    )
+
+    return result.scalar_one()
+
+
+@router.post(
+    "/{employee_id}/onboarding/check-month2-tasks-deadline",
+    response_model=OnboardingOut,
+    responses={
+        401: {"description": "Unauthorized", "model": ErrorResponse},
+        403: {"description": "Forbidden", "model": ErrorResponse},
+        404: {"description": "Not found", "model": ErrorResponse},
+        409: {"description": "Conflict", "model": ErrorResponse},
+    },
+    openapi_extra={
+        "x-allowed-roles": ["HRBP", "HR_MANAGER"],
+        "x-usage": [
+            "Intended to be invoked once per day (e.g. by an external cron) at end of business day.",
+            "If the employee is in onboarding month 2, their month-2 meeting was held, "
+            "and the manager still has not entered any tasks for that phase, "
+            "the assigned HRBP is notified so they can fill the tasks in themselves.",
+        ],
+    },
+)
+async def check_month2_tasks_deadline(
+    employee_id: int,
+    current_user: AuthenticatedUser = Depends(
+        require_roles("HRBP", "HR_MANAGER")
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Onboarding).where(Onboarding.employee_id == employee_id)
+    )
+    onboarding = result.scalar_one_or_none()
+
+    if onboarding is None:
+        raise HTTPException(status_code=404, detail="Onboarding not found")
+
+    if onboarding.current_phase_number != 2:
+        raise HTTPException(
+            status_code=409,
+            detail="Employee is not in onboarding month 2",
+        )
+
+    meeting_result = await db.execute(
+        select(Meeting).where(
+            Meeting.onboarding_id == onboarding.id,
+            Meeting.onboarding_month == 2,
+            Meeting.status == MeetingStatus.HELD,
+        )
+    )
+    meeting = meeting_result.scalar_one_or_none()
+
+    if meeting is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Month 2 manager meeting has not been held yet",
+        )
+
+    phase_result = await db.execute(
+        select(OnboardingPhase).where(
+            OnboardingPhase.onboarding_id == onboarding.id,
+            OnboardingPhase.phase_number == 2,
+        )
+    )
+    phase = phase_result.scalar_one_or_none()
+
+    task_count = 0
+    if phase is not None:
+        task_result = await db.execute(
+            select(OnboardingTask).where(OnboardingTask.phase_id == phase.id)
+        )
+        task_count = len(task_result.scalars().all())
+
+    if task_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Manager has already entered tasks for this phase",
+        )
+
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == employee_id)
+    )
+    employee = employee_result.scalar_one()
+
+    hrbp_result = await db.execute(
+        select(HrbpTeamAssignment.hrbp_id).where(
+            HrbpTeamAssignment.team_id == employee.team_id
+        )
+    )
+    hrbp_ids = hrbp_result.scalars().all()
+
+    for hrbp_id in hrbp_ids:
+        await notify_employee(
+            db,
+            employee_id=hrbp_id,
+            type="MANAGER_TASKS_MISSING",
+            message=(
+                f"Manager has not entered month-2 onboarding tasks for "
+                f"employee #{employee_id}. Please fill them in."
+            ),
+            reference_type="ONBOARDING",
+            reference_id=onboarding.id,
+        )
+
+    await db.commit()
+
+    result = await db.execute(
+        select(Onboarding)
+        .options(
+            selectinload(Onboarding.buddy),
+            selectinload(Onboarding.development_plan),
+        )
+        .where(Onboarding.id == onboarding.id)
     )
 
     return result.scalar_one()
@@ -1659,6 +1791,7 @@ async def list_employee_competencies(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1672,20 +1805,6 @@ async def list_employee_competencies(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Employee not found",
         )
-
-
-    if (
-        "HR_MANAGER" not in current_user.roles
-    ):
-        if (
-            "EMPLOYEE" in current_user.roles
-            and current_user.employee_id != employee_id
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not allowed",
-            )
-
 
 
     result = await db.execute(
@@ -1740,6 +1859,7 @@ async def assign_employee_competencies(
             "HR_MANAGER",
         )
     ),
+    _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
 ):
 

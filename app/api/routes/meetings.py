@@ -19,6 +19,7 @@ from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRe
 from app.schemas.errors import ErrorResponse
 from app.models.meeting_participant import MeetingResponseStatus
 from app.models import Employee
+from app.services.notification import notify_employee
 router = APIRouter(prefix="/meetings", tags=["Employees"])
 
 
@@ -177,6 +178,19 @@ async def create_meeting(
                 detail="Cannot create meeting for employee outside your team"
             )
 
+    if "HRBP" in current_user.roles and "HR_MANAGER" not in current_user.roles:
+        assignment_result = await db.execute(
+            select(HrbpTeamAssignment).where(
+                HrbpTeamAssignment.hrbp_id == current_user.employee_id,
+                HrbpTeamAssignment.team_id == employee.team_id,
+            )
+        )
+        if assignment_result.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=403,
+                detail="Cannot create meeting for employee outside your assigned teams"
+            )
+
 
     if payload.scheduled_at < datetime.now() - timedelta(seconds=5):
         raise HTTPException(
@@ -214,6 +228,15 @@ async def create_meeting(
         )
 
         db.add(participant)
+
+        await notify_employee(
+            db,
+            employee_id=participant_id,
+            type="MEETING_SCHEDULED",
+            message=f"A meeting has been scheduled for {payload.scheduled_at.isoformat()}. Please confirm your attendance.",
+            reference_type="MEETING",
+            reference_id=meeting.id,
+        )
 
 
     await db.commit()
