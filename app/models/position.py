@@ -6,6 +6,8 @@ class Position(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
+    job_description: Mapped[str | None] = mapped_column(default=None)
+    default_onboarding_duration_months: Mapped[int] = mapped_column(default=3)
     employees = relationship(
         "Employee",
         back_populates="position",

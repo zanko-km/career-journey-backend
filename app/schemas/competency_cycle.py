@@ -74,6 +74,18 @@ class CompetencyCycleResponse(BaseModel):
         validation_alias="review_started_by",
     )
     
+class StartReviewRequest(BaseModel):
+    competencyIds: list[int]
+    focusEndsAt: datetime | None = Field(
+        default=None,
+        alias="focusEndsAt",
+    )
+
+    model_config = {
+        "populate_by_name": True
+    }
+
+
 class CompetencyCycleCreateRequest(BaseModel):
     startDate: date = Field(
         alias="startDate"
