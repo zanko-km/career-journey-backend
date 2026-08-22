@@ -6,6 +6,8 @@ from app.api.routes.competency_cycles import router as competency_cycle_router
 from app.api.routes.employees import router as employee_router
 from app.api.routes.me import router as me_router
 from app.api.routes.meetings import router as meeting_router
+from app.api.routes import competencies
+from app.api.routes.competency_cycles import router as competency_cycle_router
 from app.api.routes.notification import router as notif_router
 from app.api.routes.teams import router as teams_router
 from app.core.exception_handlers import api_exception_handler
@@ -57,11 +59,11 @@ app.include_router(
     )
 
 app.include_router(employee_router, tags=["Employees"])
-app.include_router(me_router, tags=["Me"])
-app.include_router(meeting_router, tags=["Meetings"])
-app.include_router(competencies.router, tags = ["Competencies"])
-app.include_router(competency_cycle_router, tags = ["Competencies"])
-app.include_router(notif_router, tags = ["Notification"])
+app.include_router(me_router, tags=["Employees"])
+app.include_router(meeting_router, tags=["Employees"])
+app.include_router(competencies.router)
+app.include_router(competency_cycle_router)
+app.include_router(notif_router)
 
 @app.get("/health")
 async def health_check():
