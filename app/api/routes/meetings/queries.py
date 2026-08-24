@@ -16,7 +16,7 @@ from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRe
 from app.schemas.errors import ErrorResponse
 
 
-router = APIRouter(prefix="/meetings", tags=["Employees"])
+router = APIRouter(prefix="/meetings")
 
 
 @router.get(

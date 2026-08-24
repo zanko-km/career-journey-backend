@@ -10,7 +10,7 @@ from fastapi import APIRouter
 from .queries import router as queries_router
 from .actions import router as actions_router
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 router.include_router(queries_router)
 router.include_router(actions_router)

@@ -19,7 +19,7 @@ from datetime import timedelta
 from app.core.scope import require_employee_scope
 
 
-router = APIRouter(prefix="/employees", tags=["Employees"])
+router = APIRouter(prefix="/employees")
 
 
 @router.get(

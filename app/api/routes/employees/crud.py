@@ -24,7 +24,7 @@ from app.models.user import User
 from supabase import Client
 
 
-router = APIRouter(prefix="/employees", tags=["Employees"])
+router = APIRouter(prefix="/employees")
 
 
 async def get_hr_manager_employee(db: AsyncSession) -> Employee | None:

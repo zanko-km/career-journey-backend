@@ -11,7 +11,7 @@ from .assessments import router as assessments_router
 from .radar import router as radar_router
 from .development_plan import router as development_plan_router
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 router.include_router(cycle_router)
 router.include_router(assessments_router)

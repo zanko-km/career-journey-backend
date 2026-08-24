@@ -15,7 +15,7 @@ from app.schemas.competency_cycle import (
 from app.models.user import EmployeeRoleType
 
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 
 @router.get(

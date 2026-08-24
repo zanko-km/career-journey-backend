@@ -16,7 +16,7 @@ from app.schemas.errors import ErrorResponse
 from app.core.scope import require_employee_scope
 
 
-router = APIRouter(prefix="/employees", tags=["Employees"])
+router = APIRouter(prefix="/employees")
 
 
 ASSIGNABLE_ROLES = {

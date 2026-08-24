@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     supabase_publishable_key: str
     supabase_service_role_key: str | None = None
 
+    db_pool_size: int = 20
+    db_max_overflow: int = 20
+    db_pool_timeout: int = 30
+    db_pool_recycle: int = 1800
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

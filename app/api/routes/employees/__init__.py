@@ -16,7 +16,7 @@ from .decisions import router as decisions_router
 from .competencies import router as competencies_router
 from .roles import router as roles_router
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 router.include_router(crud_router)
 router.include_router(onboarding_router)

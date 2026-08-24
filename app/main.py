@@ -22,16 +22,25 @@ tags_metadata = [
     {
         "name": "Employees",
         "description": "Employee creation, profile management, visibility, status, and employee-scoped resources."
-    }
+    },
+    {
+        "name": "Meetings",
+    },
+    {
+        "name": "Competencies",
+    },
+    {
+        "name": "Notification",
+    },
 ]
 
 
 app = FastAPI(
     title = "Career Journey API",
     version = "0.1.0",
-    servers=[
-        {"url": "/api/v1"}
-    ],
+    #servers=[
+    #    {"url": "/api/v1"}
+    #],
     openapi_tags=tags_metadata
 )
 
@@ -47,11 +56,11 @@ app.include_router(
     )
 
 app.include_router(employee_router, tags=["Employees"])
-app.include_router(me_router, tags=["Employees"])
-app.include_router(meeting_router, tags=["Employees"])
-app.include_router(competencies.router)
-app.include_router(competency_cycle_router)
-app.include_router(notif_router)
+app.include_router(me_router, tags=["Me"])
+app.include_router(meeting_router, tags=["Meetings"])
+app.include_router(competencies.router, tags = ["Competencies"])
+app.include_router(competency_cycle_router, tags = ["Competencies"])
+app.include_router(notif_router, tags = ["Notification"])
 
 @app.get("/health")
 async def health_check():
