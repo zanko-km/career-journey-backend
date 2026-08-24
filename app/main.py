@@ -59,11 +59,11 @@ app.include_router(
     )
 
 app.include_router(employee_router, tags=["Employees"])
-app.include_router(me_router, tags=["Employees"])
-app.include_router(meeting_router, tags=["Employees"])
-app.include_router(competencies.router)
-app.include_router(competency_cycle_router)
-app.include_router(notif_router)
+app.include_router(me_router, tags=["Me"])
+app.include_router(meeting_router, tags=["Meetings"])
+app.include_router(competencies.router, tags = ["Competencies"])
+app.include_router(competency_cycle_router, tags = ["Competencies"])
+app.include_router(notif_router, tags = ["Notification"])
 
 @app.get("/health")
 async def health_check():

@@ -46,8 +46,12 @@ from app.schemas.development_plan import DevelopmentPlanResponse, DevelopmentPla
 from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
 
 
+<<<<<<< HEAD
 router = APIRouter(tags=["Employees"])
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+router = APIRouter()
+>>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 def development_plan_item_to_response(item):

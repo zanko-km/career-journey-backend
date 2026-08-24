@@ -11,10 +11,14 @@ from .queries import router as queries_router
 from .actions import router as actions_router
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 router = APIRouter()
 =======
 router = APIRouter(tags=["Employees"])
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+router = APIRouter()
+>>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 router.include_router(queries_router)
 router.include_router(actions_router)

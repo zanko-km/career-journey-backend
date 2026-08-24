@@ -19,10 +19,14 @@ from app.services.notification import notify_employee
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 router = APIRouter()
 =======
 router = APIRouter(tags=["Employees"])
 >>>>>>> 838e356 (chore: reorganize test suite by domain, fix competency_cycles typo)
+=======
+router = APIRouter()
+>>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 @router.get(
     "/competency-cycles/{cycle_id}",

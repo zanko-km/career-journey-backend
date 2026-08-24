@@ -39,8 +39,12 @@ from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRe
 from app.schemas.errors import ErrorResponse
 
 
+<<<<<<< HEAD
 router = APIRouter(prefix="/meetings", tags=["Employees"])
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+router = APIRouter(prefix="/meetings")
+>>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 @router.get(

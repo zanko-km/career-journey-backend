@@ -49,8 +49,12 @@ from app.models.user import EmployeeRoleType
 from app.services.notification import notify_employee
 
 
+<<<<<<< HEAD
 router = APIRouter(tags=["Employees"])
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+router = APIRouter()
+>>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 @router.get(

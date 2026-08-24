@@ -42,8 +42,12 @@ from app.services.notification import notify_employee
 router = APIRouter(prefix="/meetings")
 =======
 
+<<<<<<< HEAD
 router = APIRouter(prefix="/meetings", tags=["Employees"])
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+router = APIRouter(prefix="/meetings")
+>>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 async def _can_organize_downward(
