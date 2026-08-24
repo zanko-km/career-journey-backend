@@ -8,7 +8,7 @@ from app.models.onboarding import Onboarding
 from app.schemas.errors import ErrorResponse
 from app.schemas.onboarding import OnboardingOut
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 
 @router.get(

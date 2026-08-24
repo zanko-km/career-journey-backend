@@ -15,7 +15,7 @@ from app.models.user import EmployeeRoleType
 from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
 
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 
 @router.post(

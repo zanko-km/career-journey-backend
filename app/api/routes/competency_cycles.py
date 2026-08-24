@@ -18,7 +18,7 @@ from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
 from app.services.notification import notify_employee
 
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 @router.get(
     "/competency-cycles/{cycle_id}",

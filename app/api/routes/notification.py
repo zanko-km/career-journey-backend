@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.models.notification import Notification
 from app.schemas.notification import NotificationResponse
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 @router.get(
     "/notifications",

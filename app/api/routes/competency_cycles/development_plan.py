@@ -15,7 +15,7 @@ from app.schemas.development_plan import DevelopmentPlanResponse, DevelopmentPla
 from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
 
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 
 def development_plan_item_to_response(item):

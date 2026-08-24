@@ -17,7 +17,7 @@ from app.models.user import EmployeeRoleType
 from app.services.notification import notify_employee
 
 
-router = APIRouter(tags=["Employees"])
+router = APIRouter()
 
 
 @router.get(

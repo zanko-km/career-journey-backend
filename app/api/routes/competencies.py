@@ -15,7 +15,6 @@ from app.schemas.errors import ErrorResponse
 
 router = APIRouter(
     prefix="/competencies",
-    tags=["Competencies"],
 )
 
 

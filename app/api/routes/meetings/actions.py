@@ -20,7 +20,7 @@ from app.models.user import EmployeeRoleType
 from app.services.notification import notify_employee
 
 
-router = APIRouter(prefix="/meetings", tags=["Employees"])
+router = APIRouter(prefix="/meetings")
 
 
 async def _can_organize_downward(
