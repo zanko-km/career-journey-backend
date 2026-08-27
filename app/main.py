@@ -1,14 +1,15 @@
 from fastapi import FastAPI
+
+from app.api.routes import competencies
 from app.api.routes.auth import router as auth_router
-from app.api.routes.teams import router as teams_router
-from app.core.exceptions import APIException
-from app.core.exception_handlers import api_exception_handler
+from app.api.routes.competency_cycles import router as competency_cycle_router
 from app.api.routes.employees import router as employee_router
 from app.api.routes.me import router as me_router
 from app.api.routes.meetings import router as meeting_router
-from app.api.routes import competencies
-from app.api.routes.competency_cycles import router as competency_cycle_router
 from app.api.routes.notification import router as notif_router
+from app.api.routes.teams import router as teams_router
+from app.core.exception_handlers import api_exception_handler
+from app.core.exceptions import APIException
 
 tags_metadata = [
     {
