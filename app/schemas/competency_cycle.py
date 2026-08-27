@@ -2,9 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.competency import CompetencyResponse
-from app.schemas.employee import EmployeeSummary
-from app.models.competency_cycle import CompetencyCycleStatus, CompetencyCyclePhase
+from app.models.competency_cycle import CompetencyCyclePhase, CompetencyCycleStatus
 
 
 class SelfAssessmentScore(BaseModel):

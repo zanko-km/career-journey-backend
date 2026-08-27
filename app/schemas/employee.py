@@ -1,10 +1,11 @@
+import enum
 from datetime import date
 
 from pydantic import BaseModel, Field
 
 from app.models.employee import EmployeeStatus
-from app.models.onboarding import InvestmentDecision, OnboardingStatus, FinalResult
-import enum
+from app.models.onboarding import FinalResult, InvestmentDecision, OnboardingStatus
+
 
 class OnboardingActionStatus(str, enum.Enum):
     PENDING = "PENDING"
@@ -193,7 +194,7 @@ class EmployeeDetailOut(BaseModel):
         alias="monthlySalary",
     )
 
-    position: PositionOut | None = None
+    position: PositionOut
     team: TeamOut | None = None
 
     buddy: EmployeeSummary | None = None

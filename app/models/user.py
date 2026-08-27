@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
+from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from typing import TYPE_CHECKING
-from enum import Enum
+
 if TYPE_CHECKING:
     from app.models.employee import Employee
 class EmployeeRoleType(str, Enum):

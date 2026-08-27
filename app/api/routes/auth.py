@@ -1,18 +1,25 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
-
-from app.core.current_user import get_current_user, load_authenticated_user, AuthenticatedUser
-from app.schemas.auth import LoginRequest
-from app.services.auth import AuthService
-from app.core.supabase import get_supabase
-from supabase import Client
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_db
-from app.schemas.auth import AuthResponse, UserSummary
-from app.core.security import bearer_scheme
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import HTTPAuthorizationCredentials
-from app.schemas.auth import RefreshRequest, ChangePasswordRequest
-from app.schemas.errors import ErrorResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from supabase import Client
 
+from app.core.current_user import (
+    AuthenticatedUser,
+    get_current_user,
+    load_authenticated_user,
+)
+from app.core.database import get_db
+from app.core.security import bearer_scheme
+from app.core.supabase import get_supabase
+from app.schemas.auth import (
+    AuthResponse,
+    ChangePasswordRequest,
+    LoginRequest,
+    RefreshRequest,
+    UserSummary,
+)
+from app.schemas.errors import ErrorResponse
+from app.services.auth import AuthService
 
 router = APIRouter(prefix="/auth")
 
