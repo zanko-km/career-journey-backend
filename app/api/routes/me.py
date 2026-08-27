@@ -198,7 +198,6 @@ async def get_my_teams(
     },
     openapi_extra={
         "x-allowed-roles": [
-            "MANAGER",
             "HR_MANAGER",
         ]
     },

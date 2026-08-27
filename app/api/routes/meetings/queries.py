@@ -1,20 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, or_
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
 from app.core.current_user import AuthenticatedUser
 from app.core.database import get_db
 from app.core.permissions import require_roles
 from app.models import (
+    Employee,
+    HrbpTeamAssignment,
     Meeting,
     MeetingParticipant,
-    Employee,
-    HrbpTeamAssignment, MeetingStatus,
-    Team, EmployeeRole,
 )
-from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRequest, MeetingConfirmHeldRequest
 from app.schemas.errors import ErrorResponse
-
+from app.schemas.meeting import (
+    MeetingResponse,
+)
 
 router = APIRouter(prefix="/meetings")
 
@@ -31,6 +34,17 @@ router = APIRouter(prefix="/meetings")
             "description": "Forbidden",
             "model": ErrorResponse,
         },
+        422: {
+            "description": "Validation Error",
+            "model": ErrorResponse,
+        },
+    },
+    openapi_extra={
+        "x-query-params": [
+            "withinDays (optional, int >= 1): only return meetings scheduled "
+            "between now and now + withinDays days. Omit to get the full, "
+            "unfiltered list (existing/default behaviour).",
+        ],
     },
 )
 async def list_meetings(
@@ -43,6 +57,15 @@ async def list_meetings(
         )
     ),
     db: AsyncSession = Depends(get_db),
+    within_days: int | None = Query(
+        default=None,
+        alias="withinDays",
+        ge=1,
+        description=(
+            "Only return meetings scheduled within the next N days "
+            "(e.g. withinDays=30 for 'next month'). Omitted = no filtering."
+        ),
+    ),
 ):
 
     visible_employee_ids = [
@@ -97,7 +120,7 @@ async def list_meetings(
         visible_employee_ids = all_employee_ids
 
 
-    result = await db.execute(
+    query = (
         select(Meeting)
         .join(
             MeetingParticipant,
@@ -118,6 +141,16 @@ async def list_meetings(
             selectinload(Meeting.organizer),
         )
     )
+
+    if within_days is not None:
+        now = datetime.now()
+
+        query = query.where(
+            Meeting.scheduled_at >= now,
+            Meeting.scheduled_at <= now + timedelta(days=within_days),
+        )
+
+    result = await db.execute(query)
 
 
     meetings = result.scalars().unique().all()
@@ -196,9 +229,8 @@ async def get_meeting(
     if (
         not allowed
         and "MANAGER" in current_user.roles
-    ):
-        if meeting.employee.manager_id == current_user.employee_id:
-            allowed = True
+    ) and meeting.employee.manager_id == current_user.employee_id:
+        allowed = True
 
 
     if (

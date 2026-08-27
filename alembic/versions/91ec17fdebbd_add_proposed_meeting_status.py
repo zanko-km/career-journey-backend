@@ -19,10 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "ALTER TYPE meetingstatus ADD VALUE 'PROPOSED'"
-    )
-
+    pass
 
 def downgrade() -> None:
     pass

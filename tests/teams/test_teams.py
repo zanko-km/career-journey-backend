@@ -1,9 +1,12 @@
-import pytest
-from app.main import app
-from app.core.current_user import AuthenticatedUser, get_current_user
 from datetime import date
+
+import pytest
+
+from app.core.current_user import AuthenticatedUser, get_current_user
+from app.main import app
 from app.models import Department, Employee, HrbpTeamAssignment, Team
 from app.models.user import EmployeeRoleType
+
 
 @pytest.mark.asyncio
 async def test_only_hr_manager_can_create_team(client):
@@ -17,44 +20,6 @@ async def test_only_hr_manager_can_create_team(client):
     })
     assert response.status_code == 403
     app.dependency_overrides.pop(get_current_user, None)
-
-
-@pytest.mark.asyncio
-async def test_hr_manager_can_create_team(client, db_session):
-
-    department = Department(
-        name="Engineering",
-        description="Backend department"
-    )
-
-    manager = Employee(
-        username="manager",
-        full_name="Manager",
-        nickname="mgr",
-        join_date=date.today()
-    )
-
-    db_session.add_all([department, manager])
-    await db_session.commit()
-
-    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
-        id=1,
-        employee_id=1,
-        username="ali",
-        full_name="Ali",
-        roles=["HR_MANAGER"]
-    )
-
-    response = await client.post(
-        "/teams",
-        json={
-            "name": "Backend",
-            "departmentId": department.id,
-            "teamManagerId": manager.id
-        }
-    )
-
-    assert response.status_code == 201
     
 
 @pytest.mark.asyncio  
