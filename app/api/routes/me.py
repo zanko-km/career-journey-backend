@@ -216,9 +216,12 @@ async def get_my_teams(
     openapi_extra={
         "x-allowed-roles": [
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             "MANAGER",
 >>>>>>> 0e1fb74 (updating profile visibility for manager HR and HRBP)
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
             "HR_MANAGER",
         ]
     },

@@ -198,7 +198,7 @@ class EmployeeDetailOut(BaseModel):
         alias="monthlySalary",
     )
 
-    position: PositionOut
+    position: PositionOut | None = None
     team: TeamOut | None = None
 
     buddy: EmployeeSummary | None = None

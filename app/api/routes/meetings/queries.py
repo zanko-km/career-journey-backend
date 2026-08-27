@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_, select
+<<<<<<< HEAD
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -12,10 +16,16 @@ from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
 from app.core.current_user import AuthenticatedUser
 from app.core.database import get_db
 from app.core.permissions import require_roles
 from app.models import (
+<<<<<<< HEAD
 <<<<<<< HEAD
     Employee,
     HrbpTeamAssignment,
@@ -29,15 +39,17 @@ from app.schemas.meeting import (
 
 router = APIRouter(prefix="/meetings")
 =======
+=======
+    Employee,
+    HrbpTeamAssignment,
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     Meeting,
     MeetingParticipant,
-    Employee,
-    HrbpTeamAssignment, MeetingStatus,
-    Team, EmployeeRole,
 )
-from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRequest, MeetingConfirmHeldRequest
 from app.schemas.errors import ErrorResponse
-
+from app.schemas.meeting import (
+    MeetingResponse,
+)
 
 <<<<<<< HEAD
 router = APIRouter(prefix="/meetings", tags=["Employees"])
@@ -60,6 +72,9 @@ router = APIRouter(prefix="/meetings")
             "model": ErrorResponse,
         },
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
         422: {
             "description": "Validation Error",
             "model": ErrorResponse,
@@ -71,8 +86,11 @@ router = APIRouter(prefix="/meetings")
             "between now and now + withinDays days. Omit to get the full, "
             "unfiltered list (existing/default behaviour).",
         ],
+<<<<<<< HEAD
 =======
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     },
 )
 async def list_meetings(
@@ -86,6 +104,9 @@ async def list_meetings(
     ),
     db: AsyncSession = Depends(get_db),
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     within_days: int | None = Query(
         default=None,
         alias="withinDays",
@@ -95,8 +116,11 @@ async def list_meetings(
             "(e.g. withinDays=30 for 'next month'). Omitted = no filtering."
         ),
     ),
+<<<<<<< HEAD
 =======
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
 ):
 
     visible_employee_ids = [
@@ -152,10 +176,14 @@ async def list_meetings(
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     query = (
 =======
     result = await db.execute(
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+    query = (
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
         select(Meeting)
         .join(
             MeetingParticipant,
@@ -178,6 +206,9 @@ async def list_meetings(
     )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     if within_days is not None:
         now = datetime.now()
 
@@ -188,8 +219,11 @@ async def list_meetings(
 
     result = await db.execute(query)
 
+<<<<<<< HEAD
 =======
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
 
     meetings = result.scalars().unique().all()
 
@@ -268,6 +302,7 @@ async def get_meeting(
         not allowed
         and "MANAGER" in current_user.roles
 <<<<<<< HEAD
+<<<<<<< HEAD
     ) and meeting.employee.manager_id == current_user.employee_id:
         allowed = True
 =======
@@ -275,6 +310,10 @@ async def get_meeting(
         if meeting.employee.manager_id == current_user.employee_id:
             allowed = True
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+    ) and meeting.employee.manager_id == current_user.employee_id:
+        allowed = True
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
 
 
     if (
@@ -313,7 +352,11 @@ async def get_meeting(
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     return meeting
 =======
     return meeting
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+    return meeting
+>>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
