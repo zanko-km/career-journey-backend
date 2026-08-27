@@ -6,8 +6,11 @@ from sqlalchemy.orm import selectinload
 from app.core.current_user import AuthenticatedUser, get_current_user
 from app.core.database import get_db
 from app.models.employee import Employee
+from app.models.employee_role import EmployeeRole
+from app.models.hrbp_team_assignment import HrbpTeamAssignment
 from app.models.onboarding import Onboarding
-from app.schemas.employee import EmployeeDetailOut
+from app.models.team import Team
+from app.schemas.employee import EmployeeDetailOut, EmployeeSummary, TeamOut
 from app.schemas.errors import ErrorResponse
 from app.schemas.onboarding import OnboardingOut
 
@@ -113,4 +116,106 @@ async def get_my_profile(
             detail="Onboarding not found",
         )
 
-    return employee 
+    return employee
+
+
+@router.get(
+    "/me/managed-employees",
+    response_model=list[EmployeeSummary],
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+    },
+    openapi_extra={
+        "x-allowed-roles": [
+            "MANAGER",
+            "HR_MANAGER",
+        ]
+    },
+)
+async def get_my_employees(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Employee)
+        .where(
+            Employee.manager_id == current_user.employee_id
+        )
+    )
+
+    employees = result.scalars().all()
+
+    return employees
+
+
+@router.get(
+    "/me/assigned-teams",
+    response_model=list[TeamOut],
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+    },
+    openapi_extra={
+        "x-allowed-roles": [
+            "MANAGER",
+            "HR_MANAGER",
+        ]
+    },
+)
+async def get_my_teams(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Team)
+        .join(
+            HrbpTeamAssignment,
+            HrbpTeamAssignment.team_id == Team.id
+        )
+        .where(
+            HrbpTeamAssignment.hrbp_id == current_user.employee_id
+        )
+    )
+
+    teams = result.scalars().all()
+
+    return teams
+
+
+@router.get(
+    "/me/managed-hrbps",
+    response_model=list[EmployeeSummary],
+    responses={
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+        },
+    },
+    openapi_extra={
+        "x-allowed-roles": [
+            "MANAGER",
+            "HR_MANAGER",
+        ]
+    },
+)
+async def get_my_hrbps(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Employee)
+        .join(Employee.roles)
+        .where(
+            Employee.manager_id == current_user.employee_id,
+            EmployeeRole.role == "HRBP",
+        )
+    )
+
+    hrbps = result.scalars().all()
+
+    return hrbps
