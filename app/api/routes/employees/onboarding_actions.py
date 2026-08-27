@@ -1,23 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
-from app.core.current_user import AuthenticatedUser, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.permissions import require_roles
+
+from app.core.current_user import AuthenticatedUser
 from app.core.database import get_db
+from app.core.permissions import require_roles
+from app.core.scope import require_employee_scope
 from app.models.employee import Employee
-from app.models.onboarding import Onboarding, OnboardingStatus
-from app.schemas.errors import ErrorResponse
-from app.schemas.onboarding import (
-    OnboardingOut, StartOnboardingRequest,
-    UpdateOnboardingRequest, OnboardingPhaseOut, OnboardingPhaseCreate,
-    PhaseStatus, OnboardingActionOut, OnboardingActionCreate,
-    OnboardingFeedbackOut, OnboardingFeedbackCreate,
-    EmployeeDecisionRequest, EmployeeDecisionResponse, ManagerDecisionRequest,
-)
+from app.models.onboarding import Onboarding
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
-from app.core.scope import require_employee_scope
-
+from app.schemas.errors import ErrorResponse
+from app.schemas.onboarding import (
+    OnboardingActionCreate,
+    OnboardingActionOut,
+)
 
 router = APIRouter(prefix="/employees",)
 
@@ -38,6 +37,10 @@ router = APIRouter(prefix="/employees",)
             "description": "Not found",
             "model": ErrorResponse,
         },
+        422: {
+            "description": "Validation Error",
+            "model": ErrorResponse,
+        },
     },
     openapi_extra={
         "x-allowed-roles": [
@@ -45,6 +48,11 @@ router = APIRouter(prefix="/employees",)
             "MANAGER",
             "HRBP",
             "HR_MANAGER",
+        ],
+        "x-query-params": [
+            "withinDays (optional, int >= 1): only return tasks due between "
+            "today and today + withinDays days. Omit to get the full, "
+            "unfiltered list (existing/default behaviour).",
         ],
     },
 )
@@ -60,6 +68,15 @@ async def get_employee_onboarding_actions(
     ),
     _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
+    within_days: int | None = Query(
+        default=None,
+        alias="withinDays",
+        ge=1,
+        description=(
+            "Only return tasks due within the next N days "
+            "(e.g. withinDays=30 for 'next month'). Omitted = no filtering."
+        ),
+    ),
 ):
 
     result = await db.execute(
@@ -79,7 +96,7 @@ async def get_employee_onboarding_actions(
         )
 
 
-    result = await db.execute(
+    task_query = (
         select(OnboardingTask)
         .join(
             OnboardingPhase,
@@ -89,6 +106,17 @@ async def get_employee_onboarding_actions(
             OnboardingPhase.onboarding_id == onboarding.id
         )
     )
+
+    if within_days is not None:
+        today = date.today()
+
+        task_query = task_query.where(
+            OnboardingTask.due_date.is_not(None),
+            OnboardingTask.due_date >= today,
+            OnboardingTask.due_date <= today + timedelta(days=within_days),
+        )
+
+    result = await db.execute(task_query)
 
     tasks = result.scalars().all()
 
@@ -238,5 +266,3 @@ async def create_employee_onboarding_action(
         status=task.status,
         createdBy=creator,
     )
-    
-    
