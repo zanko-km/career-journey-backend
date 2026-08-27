@@ -3,7 +3,11 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
+<<<<<<< HEAD
 from app.models.employee import EmployeeStatus, ExitType
+=======
+from app.models.employee import EmployeeStatus
+>>>>>>> 1385b82 (Feat: add me/profile endpoint)
 from app.models.onboarding import FinalResult, InvestmentDecision, OnboardingStatus
 
 
@@ -194,7 +198,7 @@ class EmployeeDetailOut(BaseModel):
         alias="monthlySalary",
     )
 
-    position: PositionOut | None = None
+    position: PositionOut
     team: TeamOut | None = None
 
     buddy: EmployeeSummary | None = None
