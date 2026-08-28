@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,6 +8,12 @@ from sqlalchemy import select
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, or_
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -23,10 +30,13 @@ from app.models import (
     Team,
 )
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 from app.schemas.meeting import MeetingResponse, MeetingCreate, MeetingRespondRequest, MeetingConfirmHeldRequest
 from app.schemas.errors import ErrorResponse
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
 from app.models.meeting_participant import MeetingResponseStatus
 from app.models.user import EmployeeRoleType
 from app.schemas.errors import ErrorResponse
@@ -39,6 +49,9 @@ from app.schemas.meeting import (
 from app.services.notification import notify_employee
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
 router = APIRouter(prefix="/meetings")
 =======
 

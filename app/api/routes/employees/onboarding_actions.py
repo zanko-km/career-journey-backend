@@ -256,12 +256,16 @@ async def get_employee_onboarding_actions(
     openapi_extra={
         "x-allowed-roles": [
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
             "MANAGER",
             "HRBP",
             "HR_MANAGER",
         ],
         "x-scope-rules": [
             "MANAGER may only create tasks for their own direct reports.",
+<<<<<<< HEAD
             "HRBP may only create tasks for employees in their assigned "
             "teams (used as the fallback path when the manager misses the "
             "same-day deadline; see "
@@ -275,6 +279,12 @@ async def get_employee_onboarding_actions(
             "HR_MANAGER",
         ],
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+            "HRBP/HR_MANAGER are unrestricted (used as the fallback path "
+            "when the manager misses the same-day deadline; see "
+            "POST /employees/{employee_id}/onboarding/check-month2-tasks-deadline).",
+        ],
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
     },
 )
 async def create_employee_onboarding_action(
@@ -283,9 +293,13 @@ async def create_employee_onboarding_action(
     current_user: AuthenticatedUser = Depends(
         require_roles(
 <<<<<<< HEAD
+<<<<<<< HEAD
             "MANAGER",
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+            "MANAGER",
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
             "HRBP",
             "HR_MANAGER",
         )
@@ -294,6 +308,9 @@ async def create_employee_onboarding_action(
 ):
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
     employee_result = await db.execute(
         select(Employee).where(
             Employee.id == employee_id
@@ -319,6 +336,7 @@ async def create_employee_onboarding_action(
                 detail="Only the employee's direct manager can create this task",
             )
 
+<<<<<<< HEAD
     if (
         "HRBP" in current_user.roles
         and "HR_MANAGER" not in current_user.roles
@@ -338,6 +356,8 @@ async def create_employee_onboarding_action(
 
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+>>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
     result = await db.execute(
         select(Onboarding)
         .where(
