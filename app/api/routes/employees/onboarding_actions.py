@@ -178,8 +178,15 @@ async def get_employee_onboarding_actions(
     },
     openapi_extra={
         "x-allowed-roles": [
+            "MANAGER",
             "HRBP",
             "HR_MANAGER",
+        ],
+        "x-scope-rules": [
+            "MANAGER may only create tasks for their own direct reports.",
+            "HRBP/HR_MANAGER are unrestricted (used as the fallback path "
+            "when the manager misses the same-day deadline; see "
+            "POST /employees/{employee_id}/onboarding/check-month2-tasks-deadline).",
         ],
     },
 )
@@ -188,12 +195,38 @@ async def create_employee_onboarding_action(
     payload: OnboardingActionCreate,
     current_user: AuthenticatedUser = Depends(
         require_roles(
+            "MANAGER",
             "HRBP",
             "HR_MANAGER",
         )
     ),
     db: AsyncSession = Depends(get_db),
 ):
+
+    employee_result = await db.execute(
+        select(Employee).where(
+            Employee.id == employee_id
+        )
+    )
+
+    employee = employee_result.scalar_one_or_none()
+
+    if employee is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found",
+        )
+
+    if (
+        "MANAGER" in current_user.roles
+        and "HRBP" not in current_user.roles
+        and "HR_MANAGER" not in current_user.roles
+    ):
+        if employee.manager_id != current_user.employee_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Only the employee's direct manager can create this task",
+            )
 
     result = await db.execute(
         select(Onboarding)
