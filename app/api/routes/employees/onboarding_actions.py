@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.core.permissions import require_roles
 from app.core.scope import require_employee_scope
 from app.models.employee import Employee
+from app.models.hrbp_team_assignment import HrbpTeamAssignment
 from app.models.onboarding import Onboarding
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -184,9 +185,13 @@ async def get_employee_onboarding_actions(
         ],
         "x-scope-rules": [
             "MANAGER may only create tasks for their own direct reports.",
-            "HRBP/HR_MANAGER are unrestricted (used as the fallback path "
-            "when the manager misses the same-day deadline; see "
-            "POST /employees/{employee_id}/onboarding/check-month2-tasks-deadline).",
+            "HRBP may only create tasks for employees in their assigned "
+            "teams (used as the fallback path when the manager misses the "
+            "same-day deadline; see "
+            "POST /employees/{employee_id}/onboarding/check-month2-tasks-deadline "
+            "-- which only ever notifies HRBPs already assigned to the "
+            "employee's team, so this scoping does not break that flow).",
+            "HR_MANAGER is unrestricted.",
         ],
     },
 )
@@ -226,6 +231,23 @@ async def create_employee_onboarding_action(
             raise HTTPException(
                 status_code=403,
                 detail="Only the employee's direct manager can create this task",
+            )
+
+    if (
+        "HRBP" in current_user.roles
+        and "HR_MANAGER" not in current_user.roles
+    ):
+        assignment_result = await db.execute(
+            select(HrbpTeamAssignment).where(
+                HrbpTeamAssignment.hrbp_id == current_user.employee_id,
+                HrbpTeamAssignment.team_id == employee.team_id,
+            )
+        )
+
+        if assignment_result.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=403,
+                detail="HRBP can only create tasks for employees in assigned teams",
             )
 
     result = await db.execute(

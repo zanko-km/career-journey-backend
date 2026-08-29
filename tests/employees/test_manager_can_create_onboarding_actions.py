@@ -1,9 +1,29 @@
+"""
+Tests for closing Gap A: a Manager must be able to enter onboarding tasks
+for their own direct report (e.g. right after the month-2 meeting).
+
+Previously `POST /employees/{employee_id}/onboarding/actions` only allowed
+HRBP/HR_MANAGER, which conflicted with the documented behaviour of
+`POST /employees/{employee_id}/onboarding/check-month2-tasks-deadline`
+(which notifies the HRBP specifically because the *manager* missed the
+deadline to enter tasks themselves).
+
+MANAGER is now allowed, but scoped: they may only create tasks for
+employees who report directly to them (`employee.manager_id ==
+current_user.employee_id`). HR_MANAGER remains unrestricted. HRBP is
+scoped to their assigned teams via `HrbpTeamAssignment` (consistent with
+every other HRBP-scoped endpoint in the app, e.g. `POST /employees` and
+`start-review`), which is why the HRBP tests below set up a Team +
+HrbpTeamAssignment rather than being able to act on an arbitrary employee.
+"""
+
 from datetime import date
 
 import pytest
 
 from app.core.current_user import AuthenticatedUser, get_current_user
 from app.main import app
+from app.models import Department, HrbpTeamAssignment, Team
 from app.models.employee import Employee
 from app.models.onboarding import Onboarding
 from app.models.onboarding_phase import OnboardingPhase, PhaseStatus
@@ -84,6 +104,8 @@ async def test_manager_cannot_create_onboarding_action_for_non_report(
     client,
     db_session,
 ):
+    """A manager must not be able to assign tasks to someone who isn't
+    their direct report, even though MANAGER is now an allowed role."""
 
     manager = Employee(
         username="unrelated_manager",
@@ -157,6 +179,8 @@ async def test_hrbp_can_still_create_onboarding_action_for_any_employee(
     client,
     db_session,
 ):
+    """Regression guard: HRBP's pre-existing unrestricted access (used as
+    the deadline-miss fallback path) must still work after adding MANAGER."""
 
     hrbp = Employee(
         username="hrbp_fallback",
@@ -174,11 +198,28 @@ async def test_hrbp_can_still_create_onboarding_action_for_any_employee(
     db_session.add(manager)
     await db_session.flush()
 
+    department = Department(name="hrbp-fallback-dept")
+    db_session.add(department)
+    await db_session.flush()
+
+    team = Team(
+        name="hrbp-fallback-team",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+    db_session.add(team)
+    await db_session.flush()
+
+    # HRBP task-creation is scoped to their assigned teams, same as the
+    # other HRBP-scoped endpoints (POST /employees, start-review, IDP...).
+    db_session.add(HrbpTeamAssignment(hrbp_id=hrbp.id, team_id=team.id))
+
     employee = Employee(
         username="hrbp_fallback_target",
         full_name="Employee",
         join_date=date.today(),
         manager_id=manager.id,
+        team_id=team.id,
     )
     db_session.add(employee)
     await db_session.flush()
@@ -231,6 +272,7 @@ async def test_employee_still_cannot_create_onboarding_action(
     client,
     db_session,
 ):
+    """Regression guard: plain EMPLOYEE role must still be rejected."""
 
     employee = Employee(
         username="plain_employee_task",
@@ -252,6 +294,75 @@ async def test_employee_still_cannot_create_onboarding_action(
         f"/employees/{employee.id}/onboarding/actions",
         json={
             "title": "Should not be allowed",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_hrbp_cannot_create_onboarding_action_outside_assigned_team(
+    client,
+    db_session,
+):
+    """An HRBP not assigned to the employee's team must be rejected, same
+    as any other HRBP-scoped endpoint."""
+
+    hrbp = Employee(
+        username="hrbp_unassigned",
+        full_name="HRBP",
+        join_date=date.today(),
+    )
+    db_session.add(hrbp)
+    await db_session.flush()
+
+    manager = Employee(
+        username="manager_for_unassigned_hrbp_test",
+        full_name="Manager",
+        join_date=date.today(),
+    )
+    db_session.add(manager)
+    await db_session.flush()
+
+    department = Department(name="unassigned-hrbp-dept")
+    db_session.add(department)
+    await db_session.flush()
+
+    team = Team(
+        name="unassigned-hrbp-team",
+        department_id=department.id,
+        team_manager_id=manager.id,
+    )
+    db_session.add(team)
+    await db_session.flush()
+    # Note: no HrbpTeamAssignment is created for this HRBP.
+
+    employee = Employee(
+        username="unassigned_hrbp_target",
+        full_name="Employee",
+        join_date=date.today(),
+        manager_id=manager.id,
+        team_id=team.id,
+    )
+    db_session.add(employee)
+    await db_session.commit()
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        id=1,
+        employee_id=hrbp.id,
+        username="hrbp_unassigned",
+        full_name="HRBP",
+        roles=[EmployeeRoleType.HRBP],
+    )
+
+    response = await client.post(
+        f"/employees/{employee.id}/onboarding/actions",
+        json={
+            "title": "Should not be allowed",
+            "dueDate": str(date.today()),
+            "status": "PENDING",
         },
     )
 

@@ -3,7 +3,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
-from app.models.employee import EmployeeStatus
+from app.models.employee import EmployeeStatus, ExitType
 from app.models.onboarding import FinalResult, InvestmentDecision, OnboardingStatus
 
 
@@ -224,6 +224,12 @@ class EmployeeDetailOut(BaseModel):
     )
 
     status: EmployeeStatus
+
+    exit_type: ExitType | None = Field(
+        default=None,
+        alias="exitType",
+    )
+
     roles: list[str]
 
     model_config = {
@@ -234,6 +240,19 @@ class EmployeeDetailOut(BaseModel):
     
 class EmployeeStatusUpdate(BaseModel):
     status: EmployeeStatus
+
+    exit_type: ExitType | None = Field(
+        default=None,
+        alias="exitType",
+        description=(
+            "Required when status is EXITED: RESIGNATION or TERMINATION. "
+            "Ignored for any other status."
+        ),
+    )
+
+    model_config = {
+        "populate_by_name": True,
+    }
 
 
 class EmployeeRoleAssignRequest(BaseModel):

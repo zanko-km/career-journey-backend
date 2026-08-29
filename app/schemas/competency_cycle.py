@@ -67,9 +67,9 @@ class CompetencyCycleResponse(BaseModel):
         validation_alias="review_started_at",
     )
 
-    reviewStartedBy: object | None = Field(
+    reviewStartedBy: int | None = Field(
         default=None,
-        validation_alias="review_started_by",
+        validation_alias="review_started_by_id",
     )
     
 class StartReviewRequest(BaseModel):
@@ -77,6 +77,17 @@ class StartReviewRequest(BaseModel):
     focusEndsAt: datetime | None = Field(
         default=None,
         alias="focusEndsAt",
+    )
+    meetingScheduledAt: datetime | None = Field(
+        default=None,
+        alias="meetingScheduledAt",
+        description=(
+            "Optional. If provided, a performance-review meeting is "
+            "created automatically with the employee and their direct "
+            "manager as participants (both are notified). If omitted, "
+            "only the start-review notifications are sent and the HRBP "
+            "can schedule the meeting separately via POST /meetings."
+        ),
     )
 
     model_config = {
