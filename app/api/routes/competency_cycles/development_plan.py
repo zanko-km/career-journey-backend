@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,21 +31,35 @@ from app.schemas.errors import ErrorResponse
 router = APIRouter()
 =======
 from fastapi import APIRouter, Depends, HTTPException, status
+=======
+from fastapi import APIRouter, Depends, HTTPException
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
 from sqlalchemy import select
-from app.core.current_user import AuthenticatedUser
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.permissions import require_roles
+from sqlalchemy.orm import selectinload
+
+from app.core.current_user import AuthenticatedUser
 from app.core.database import get_db
-from app.schemas.errors import ErrorResponse
-from app.models import CompetencyCycle, EmployeeCompetency, CompetencySelfAssessment, CompetencyManagerAssessment, Competency
-from app.schemas.competency_cycle import (
-    CompetencyCycleResponse, CompetencyCycleStatus,
-    SelfAssessmentRequest, ManagerAssessmentRequest, CompetencyRadarData, StartReviewRequest,
+from app.core.permissions import require_roles
+from app.core.scope import is_hrbp_of_employee
+from app.models import (
+    CompetencyCycle,
+    DevelopmentPlanItem,
+    Employee,
+    EmployeeCompetency,
+    HrbpTeamAssignment,
+    Team,
 )
 from app.models.user import EmployeeRoleType
-from app.schemas.development_plan import DevelopmentPlanResponse, DevelopmentPlanUpsertRequest, DevelopmentPlanItemResponse
-from app.models import DevelopmentPlanItem, Employee, HrbpTeamAssignment, Team
-
+from app.schemas.competency_cycle import (
+    CompetencyCycleStatus,
+)
+from app.schemas.development_plan import (
+    DevelopmentPlanItemResponse,
+    DevelopmentPlanResponse,
+    DevelopmentPlanUpsertRequest,
+)
+from app.schemas.errors import ErrorResponse
 
 <<<<<<< HEAD
 router = APIRouter(tags=["Employees"])
@@ -100,9 +115,13 @@ async def get_development_plan(
         select(CompetencyCycle)
         .where(CompetencyCycle.id == cycle_id)
 <<<<<<< HEAD
+<<<<<<< HEAD
         .options(selectinload(CompetencyCycle.employee))
 =======
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+        .options(selectinload(CompetencyCycle.employee))
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
     )
 
     cycle = result.scalar_one_or_none()
@@ -115,6 +134,7 @@ async def get_development_plan(
 
 
     if (
+<<<<<<< HEAD
 <<<<<<< HEAD
         current_user.employee_id != cycle.employee_id
         and EmployeeRoleType.HR_MANAGER not in current_user.roles
@@ -139,13 +159,32 @@ async def get_development_plan(
 =======
         EmployeeRoleType.EMPLOYEE in current_user.roles
         and cycle.employee_id != current_user.employee_id
+=======
+        current_user.employee_id != cycle.employee_id
+        and EmployeeRoleType.HR_MANAGER not in current_user.roles
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
     ):
-        raise HTTPException(
-            status_code=403,
-            detail="Forbidden",
+        is_direct_manager = (
+            EmployeeRoleType.MANAGER in current_user.roles
+            and cycle.employee.manager_id == current_user.employee_id
         )
 
+<<<<<<< HEAD
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+        is_assigned_hrbp = False
+        if EmployeeRoleType.HRBP in current_user.roles:
+            is_assigned_hrbp = await is_hrbp_of_employee(
+                db, current_user.employee_id, cycle.employee_id
+            )
+
+        if not is_direct_manager and not is_assigned_hrbp:
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden",
+            )
+
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
 
     result = await db.execute(
         select(DevelopmentPlanItem)
@@ -165,13 +204,19 @@ async def get_development_plan(
     hrbp_items = [
         item for item in items
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
         # HR_MANAGER-authored items are shown in the same "HR side" bucket
         # as HRBP items -- the response only has two buckets (employee vs.
         # HR), and there's no meaningful UI distinction between the two.
         if item.author_role in (EmployeeRoleType.HRBP, EmployeeRoleType.HR_MANAGER)
+<<<<<<< HEAD
 =======
         if item.author_role == EmployeeRoleType.HRBP
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
     ]
 
 
@@ -213,9 +258,13 @@ async def submit_development_plan(
             "EMPLOYEE",
             "HRBP",
 <<<<<<< HEAD
+<<<<<<< HEAD
             "HR_MANAGER",
 =======
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+            "HR_MANAGER",
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
         )
     ),
     db: AsyncSession = Depends(get_db),
@@ -236,6 +285,7 @@ async def submit_development_plan(
         )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     # 2. Employee permission -- only a plain EMPLOYEE (no HRBP/HR_MANAGER
     # role) is restricted to their own cycle. HRBP and HR_MANAGER act on
     # other employees' cycles by design.
@@ -248,6 +298,15 @@ async def submit_development_plan(
     if (
         EmployeeRoleType.EMPLOYEE in current_user.roles
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+    # 2. Employee permission -- only a plain EMPLOYEE (no HRBP/HR_MANAGER
+    # role) is restricted to their own cycle. HRBP and HR_MANAGER act on
+    # other employees' cycles by design.
+    if (
+        EmployeeRoleType.EMPLOYEE in current_user.roles
+        and EmployeeRoleType.HRBP not in current_user.roles
+        and EmployeeRoleType.HR_MANAGER not in current_user.roles
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
         and cycle.employee_id != current_user.employee_id
     ):
         raise HTTPException(
@@ -256,10 +315,14 @@ async def submit_development_plan(
         )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
     # 3. Determine author role. HR_MANAGER takes priority over HRBP when a
     # user happens to hold both (same precedence as elsewhere in the app,
     # e.g. meeting organizing), since HR_MANAGER is the unrestricted
     # superset role.
+<<<<<<< HEAD
     author_role = (
         EmployeeRoleType.HR_MANAGER
         if EmployeeRoleType.HR_MANAGER in current_user.roles
@@ -269,18 +332,30 @@ async def submit_development_plan(
     author_role = (
         EmployeeRoleType.HRBP
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+    author_role = (
+        EmployeeRoleType.HR_MANAGER
+        if EmployeeRoleType.HR_MANAGER in current_user.roles
+        else EmployeeRoleType.HRBP
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
         if EmployeeRoleType.HRBP in current_user.roles
         else EmployeeRoleType.EMPLOYEE
     )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
     # 4. HRBP permission -- scoped to assigned teams. HR_MANAGER is
     # unrestricted (consistent with every other HR_MANAGER-vs-HRBP check
     # in the app), so this scope check only applies to genuine HRBP
     # authors.
+<<<<<<< HEAD
 =======
     # 4. HRBP permission
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
     if author_role == EmployeeRoleType.HRBP:
         has_access = await db.execute(
             select(Employee.id)
@@ -373,7 +448,11 @@ async def submit_development_plan(
         development_plan_item_to_response(item)
         for item in saved_items
 <<<<<<< HEAD
+<<<<<<< HEAD
     ]
 =======
     ]
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+    ]
+>>>>>>> e07fe64 (fixing the IDP gap for HR manager)
