@@ -17,6 +17,7 @@ from app.schemas.onboarding import (
 )
 from app.models.onboarding_feedback import OnboardingFeedback
 from app.core.scope import require_employee_scope
+from app.services.notification import notify_employee
 
 
 router = APIRouter(prefix="/employees")
@@ -212,6 +213,23 @@ async def create_employee_onboarding_feedback(
 
 
     db.add(feedback)
+
+    await db.flush()
+
+    # Notify the employee's direct manager that month-1 HRBP feedback has
+    # been written, so they can review it ahead of the month-2 hand-off.
+    if employee.manager_id is not None:
+        await notify_employee(
+            db,
+            employee_id=employee.manager_id,
+            type="ONBOARDING_FEEDBACK_ADDED",
+            message=(
+                f"HRBP feedback has been added for employee #{employee_id} "
+                "from their month-1 onboarding meeting."
+            ),
+            reference_type="ONBOARDING_FEEDBACK",
+            reference_id=feedback.id,
+        )
 
     await db.commit()
 

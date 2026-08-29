@@ -4,7 +4,7 @@ from app.core.current_user import AuthenticatedUser, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import require_roles
 from app.core.database import get_db
-from app.models.employee import Employee
+from app.models.employee import Employee, EmployeeStatus
 from app.schemas.employee import (
     EmployeeDetailOut, EmployeeSummary, EmployeeStatusUpdate, EmployeeCreate,
     EmployeeRoleAssignRequest, EmployeeRolesOut,
@@ -201,6 +201,19 @@ async def update_employee_status(
             detail="Employee not found",
         )
 
+    if payload.status == EmployeeStatus.EXITED:
+        if payload.exit_type is None:
+            raise HTTPException(
+                status_code=422,
+                detail="exitType (RESIGNATION or TERMINATION) is required when status is EXITED",
+            )
+
+        employee.exit_type = payload.exit_type
+    else:
+        # exit_type is only meaningful alongside EXITED; clear it if the
+        # employee is moved to any other status.
+        employee.exit_type = None
+
     employee.status = payload.status
 
     await db.commit()
@@ -292,6 +305,7 @@ async def update_employee_status(
         nextActions=next_actions,
 
         status=employee.status,
+        exitType=employee.exit_type,
         roles=roles,
     )
     
@@ -509,6 +523,7 @@ async def create_employee(
         nextActions=next_actions,
 
         status=employee.status,
+        exitType=employee.exit_type,
         roles=roles,
     )
     
@@ -666,5 +681,6 @@ async def get_employee(
         nextActions=next_actions,
 
         status=employee.status,
+        exitType=employee.exit_type,
         roles=roles,
     )
