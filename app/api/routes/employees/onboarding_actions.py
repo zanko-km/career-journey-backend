@@ -12,6 +12,7 @@ from app.core.permissions import require_roles
 from app.core.scope import require_employee_scope
 from app.models.employee import Employee
 from app.models.hrbp_team_assignment import HrbpTeamAssignment
+<<<<<<< HEAD
 from app.models.onboarding import Onboarding
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -37,6 +38,8 @@ from app.core.database import get_db
 from app.core.permissions import require_roles
 from app.core.scope import require_employee_scope
 from app.models.employee import Employee
+=======
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 from app.models.onboarding import Onboarding
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -266,6 +269,9 @@ async def get_employee_onboarding_actions(
         "x-scope-rules": [
             "MANAGER may only create tasks for their own direct reports.",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
             "HRBP may only create tasks for employees in their assigned "
             "teams (used as the fallback path when the manager misses the "
             "same-day deadline; see "
@@ -273,6 +279,7 @@ async def get_employee_onboarding_actions(
             "-- which only ever notifies HRBPs already assigned to the "
             "employee's team, so this scoping does not break that flow).",
             "HR_MANAGER is unrestricted.",
+<<<<<<< HEAD
         ],
 =======
             "HRBP",
@@ -283,6 +290,8 @@ async def get_employee_onboarding_actions(
             "HRBP/HR_MANAGER are unrestricted (used as the fallback path "
             "when the manager misses the same-day deadline; see "
             "POST /employees/{employee_id}/onboarding/check-month2-tasks-deadline).",
+=======
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
         ],
 >>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
     },
@@ -337,6 +346,9 @@ async def create_employee_onboarding_action(
             )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     if (
         "HRBP" in current_user.roles
         and "HR_MANAGER" not in current_user.roles
@@ -354,10 +366,13 @@ async def create_employee_onboarding_action(
                 detail="HRBP can only create tasks for employees in assigned teams",
             )
 
+<<<<<<< HEAD
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
 =======
 >>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
+=======
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     result = await db.execute(
         select(Onboarding)
         .where(

@@ -5,10 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import require_roles
 from app.core.database import get_db
 <<<<<<< HEAD
+<<<<<<< HEAD
 from app.models.employee import Employee, EmployeeStatus
 =======
 from app.models.employee import Employee
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+from app.models.employee import Employee, EmployeeStatus
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 from app.schemas.employee import (
     EmployeeDetailOut, EmployeeSummary, EmployeeStatusUpdate, EmployeeCreate,
     EmployeeRoleAssignRequest, EmployeeRolesOut,
@@ -230,6 +234,9 @@ async def update_employee_status(
         )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     if payload.status == EmployeeStatus.EXITED:
         if payload.exit_type is None:
             raise HTTPException(
@@ -363,9 +370,13 @@ async def update_employee_status(
 
         status=employee.status,
 <<<<<<< HEAD
+<<<<<<< HEAD
         exitType=employee.exit_type,
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+        exitType=employee.exit_type,
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
         roles=roles,
     )
     
@@ -584,9 +595,13 @@ async def create_employee(
 
         status=employee.status,
 <<<<<<< HEAD
+<<<<<<< HEAD
         exitType=employee.exit_type,
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+        exitType=employee.exit_type,
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
         roles=roles,
     )
     
@@ -745,6 +760,7 @@ async def get_employee(
 
         status=employee.status,
 <<<<<<< HEAD
+<<<<<<< HEAD
         exitType=employee.exit_type,
         roles=roles,
     )
@@ -752,3 +768,8 @@ async def get_employee(
         roles=roles,
     )
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+        exitType=employee.exit_type,
+        roles=roles,
+    )
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)

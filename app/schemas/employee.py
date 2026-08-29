@@ -4,10 +4,14 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 from app.models.employee import EmployeeStatus, ExitType
 =======
 from app.models.employee import EmployeeStatus
 >>>>>>> 1385b82 (Feat: add me/profile endpoint)
+=======
+from app.models.employee import EmployeeStatus, ExitType
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 from app.models.onboarding import FinalResult, InvestmentDecision, OnboardingStatus
 
 
