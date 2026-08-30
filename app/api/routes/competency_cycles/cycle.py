@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -30,61 +28,6 @@ from app.schemas.errors import ErrorResponse
 from app.services.notification import notify_employee
 
 router = APIRouter()
-=======
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
-from datetime import datetime, timezone
-from app.core.current_user import AuthenticatedUser
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.permissions import require_roles
-from app.core.database import get_db
-from app.core.scope import is_hrbp_of_employee
-from sqlalchemy.orm import selectinload
-from app.schemas.errors import ErrorResponse
-from app.models import CompetencyCycle, EmployeeCompetency, CompetencySelfAssessment, CompetencyManagerAssessment, Competency
-from app.schemas.competency_cycle import (
-    CompetencyCycleResponse, CompetencyCycleStatus,
-    SelfAssessmentRequest, ManagerAssessmentRequest, CompetencyRadarData, StartReviewRequest,
-)
-from app.models.user import EmployeeRoleType
-from app.services.notification import notify_employee
-=======
-from datetime import datetime
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
-from app.core.current_user import AuthenticatedUser
-from app.core.database import get_db
-from app.core.permissions import require_roles
-from app.core.scope import is_hrbp_of_employee
-from app.models import (
-    Competency,
-    CompetencyCycle,
-    EmployeeCompetency,
-    Meeting,
-    MeetingParticipant,
-    MeetingStatus,
-)
-from app.models.meeting_participant import MeetingResponseStatus
-from app.models.user import EmployeeRoleType
-from app.schemas.competency_cycle import (
-    CompetencyCycleResponse,
-    CompetencyCycleStatus,
-    StartReviewRequest,
-)
-from app.schemas.errors import ErrorResponse
-from app.services.notification import notify_employee
-
-<<<<<<< HEAD
-router = APIRouter(tags=["Employees"])
->>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
-=======
-router = APIRouter()
->>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 @router.get(
@@ -178,24 +121,9 @@ async def get_competency_cycle(
             "Only allowed while the cycle is ACTIVE.",
             "Sets the deadline (performance review) and the focus competencies for this cycle, "
             "then unlocks self-assessment for the employee.",
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             "meetingScheduledAt is required: a performance-review meeting "
             "with the employee and their direct manager is always created "
             "and both are notified.",
-=======
->>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
-=======
-            "meetingScheduledAt is required: a performance-review meeting "
-            "with the employee and their direct manager is always created "
-            "and both are notified.",
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
-            "meetingScheduledAt is required: a performance-review meeting "
-            "with the employee and their direct manager is always created "
-            "and both are notified.",
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
         ],
     },
 )
@@ -263,15 +191,7 @@ async def start_competency_review(
     )
     cycle.focus_competencies = list(competencies_result.scalars().all())
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     cycle.review_started_at = datetime.now()
-=======
-    cycle.review_started_at = datetime.now(timezone.utc)
->>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
-=======
-    cycle.review_started_at = datetime.now()
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     cycle.review_started_by_id = current_user.employee_id
     cycle.focus_ends_at = payload.focusEndsAt
     cycle.status = CompetencyCycleStatus.SELF_ASSESSMENT_PENDING
@@ -285,10 +205,6 @@ async def start_competency_review(
         reference_id=cycle.id,
     )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     # The employee's direct manager must also be notified: they'll need
     # to submit the manager-assessment once self-assessment is done.
     if cycle.employee.manager_id is not None:
@@ -305,13 +221,6 @@ async def start_competency_review(
             reference_id=cycle.id,
         )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     # A performance-review meeting with the employee and their direct
     # manager is mandatory whenever a review is started -- the HRBP must
     # go into that meeting together with them (per business requirement),
@@ -325,8 +234,6 @@ async def start_competency_review(
     )
     db.add(meeting)
     await db.flush()
-<<<<<<< HEAD
-<<<<<<< HEAD
 
     meeting_participant_ids = {cycle.employee_id, current_user.employee_id}
     if cycle.employee.manager_id is not None:
@@ -361,82 +268,6 @@ async def start_competency_review(
                 reference_id=meeting.id,
             )
 
-=======
->>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
-=======
-    # Optionally, auto-schedule the performance review meeting with the
-    # employee and their direct manager, so the HRBP doesn't have to make
-    # a second call to POST /meetings for the common case.
-    if payload.meetingScheduledAt is not None:
-        meeting = Meeting(
-            organizer_id=current_user.employee_id,
-            employee_id=cycle.employee_id,
-            scheduled_at=payload.meetingScheduledAt,
-            notes="Performance review meeting",
-            status=MeetingStatus.PROPOSED,
-        )
-        db.add(meeting)
-        await db.flush()
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-
-    meeting_participant_ids = {cycle.employee_id, current_user.employee_id}
-    if cycle.employee.manager_id is not None:
-        meeting_participant_ids.add(cycle.employee.manager_id)
-
-    for participant_id in meeting_participant_ids:
-        db.add(
-            MeetingParticipant(
-                meeting_id=meeting.id,
-                employee_id=participant_id,
-                # The HRBP organizing it doesn't need to "respond" to
-                # their own invite, same as the general /meetings flow.
-                response_status=(
-                    MeetingResponseStatus.CONFIRMED
-                    if participant_id == current_user.employee_id
-                    else MeetingResponseStatus.PENDING
-                ),
-<<<<<<< HEAD
-            )
-        )
-
-        if participant_id != current_user.employee_id:
-            await notify_employee(
-                db,
-                employee_id=participant_id,
-                type="MEETING_SCHEDULED",
-                message=(
-                    "A performance review meeting has been scheduled "
-                    f"for {payload.meetingScheduledAt.isoformat()}. "
-                    "Please confirm your attendance."
-                ),
-                reference_type="MEETING",
-                reference_id=meeting.id,
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-            )
-        )
-
-<<<<<<< HEAD
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
-=======
-        if participant_id != current_user.employee_id:
-            await notify_employee(
-                db,
-                employee_id=participant_id,
-                type="MEETING_SCHEDULED",
-                message=(
-                    "A performance review meeting has been scheduled "
-                    f"for {payload.meetingScheduledAt.isoformat()}. "
-                    "Please confirm your attendance."
-                ),
-                reference_type="MEETING",
-                reference_id=meeting.id,
-            )
-
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     await db.commit()
     await db.refresh(cycle)
 
@@ -449,12 +280,4 @@ async def start_competency_review(
         )
     )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     return result.scalar_one()
-=======
-    return result.scalar_one()
->>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
-=======
-    return result.scalar_one()
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)

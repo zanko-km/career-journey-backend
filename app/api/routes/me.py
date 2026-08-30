@@ -6,24 +6,11 @@ from sqlalchemy.orm import selectinload
 from app.core.current_user import AuthenticatedUser, get_current_user
 from app.core.database import get_db
 from app.models.employee import Employee
-<<<<<<< HEAD
-<<<<<<< HEAD
 from app.models.employee_role import EmployeeRole
 from app.models.hrbp_team_assignment import HrbpTeamAssignment
 from app.models.onboarding import Onboarding
 from app.models.team import Team
 from app.schemas.employee import EmployeeDetailOut, EmployeeSummary, TeamOut
-=======
-from app.models.onboarding import Onboarding
-from app.schemas.employee import EmployeeDetailOut
->>>>>>> 1385b82 (Feat: add me/profile endpoint)
-=======
-from app.models.employee_role import EmployeeRole
-from app.models.hrbp_team_assignment import HrbpTeamAssignment
-from app.models.onboarding import Onboarding
-from app.models.team import Team
-from app.schemas.employee import EmployeeDetailOut, EmployeeSummary, TeamOut
->>>>>>> 0e1fb74 (updating profile visibility for manager HR and HRBP)
 from app.schemas.errors import ErrorResponse
 from app.schemas.onboarding import OnboardingOut
 
@@ -129,10 +116,6 @@ async def get_my_profile(
             detail="Onboarding not found",
         )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0e1fb74 (updating profile visibility for manager HR and HRBP)
     return employee
 
 
@@ -215,13 +198,6 @@ async def get_my_teams(
     },
     openapi_extra={
         "x-allowed-roles": [
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-            "MANAGER",
->>>>>>> 0e1fb74 (updating profile visibility for manager HR and HRBP)
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
             "HR_MANAGER",
         ]
     },
@@ -241,11 +217,4 @@ async def get_my_hrbps(
 
     hrbps = result.scalars().all()
 
-<<<<<<< HEAD
     return hrbps
-=======
-    return employee 
->>>>>>> 1385b82 (Feat: add me/profile endpoint)
-=======
-    return hrbps
->>>>>>> 0e1fb74 (updating profile visibility for manager HR and HRBP)

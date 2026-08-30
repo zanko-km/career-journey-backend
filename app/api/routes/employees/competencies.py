@@ -14,15 +14,7 @@ from app.models.competency_cycle import CompetencyCycleStatus, CompetencyCyclePh
 from app.core.scope import require_employee_scope
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 router = APIRouter(prefix="/employees")
-=======
-router = APIRouter(prefix="/employees", tags=["Employees"])
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-router = APIRouter(prefix="/employees")
->>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 @router.get(
@@ -109,13 +101,6 @@ async def list_employee_competencies(
             "model": ErrorResponse,
         },
     },
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     openapi_extra={
         "x-allowed-roles": [
             "MANAGER",
@@ -130,32 +115,13 @@ async def list_employee_competencies(
             "HR_MANAGER is unrestricted.",
         ],
     },
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 )
 async def assign_employee_competencies(
     employee_id: int,
     payload: AssignEmployeeCompetenciesRequest,
     current_user: AuthenticatedUser = Depends(
         require_roles(
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             "MANAGER",
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-            "MANAGER",
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
-            "MANAGER",
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
             "HRBP",
             "HR_MANAGER",
         )

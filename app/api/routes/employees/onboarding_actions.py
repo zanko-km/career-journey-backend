@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -12,7 +10,6 @@ from app.core.permissions import require_roles
 from app.core.scope import require_employee_scope
 from app.models.employee import Employee
 from app.models.hrbp_team_assignment import HrbpTeamAssignment
-<<<<<<< HEAD
 from app.models.onboarding import Onboarding
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -23,38 +20,6 @@ from app.schemas.onboarding import (
 )
 
 router = APIRouter(prefix="/employees",)
-=======
-from fastapi import APIRouter, Depends, HTTPException, status
-=======
-from datetime import date, timedelta
-
-from fastapi import APIRouter, Depends, HTTPException, Query
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.current_user import AuthenticatedUser
-from app.core.database import get_db
-from app.core.permissions import require_roles
-from app.core.scope import require_employee_scope
-from app.models.employee import Employee
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
-from app.models.onboarding import Onboarding
-from app.models.onboarding_phase import OnboardingPhase
-from app.models.onboarding_task import OnboardingTask
-from app.schemas.errors import ErrorResponse
-from app.schemas.onboarding import (
-    OnboardingActionCreate,
-    OnboardingActionOut,
-)
-
-<<<<<<< HEAD
-router = APIRouter(prefix="/employees", tags=["Employees"])
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-router = APIRouter(prefix="/employees",)
->>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 @router.get(
@@ -73,19 +38,10 @@ router = APIRouter(prefix="/employees",)
             "description": "Not found",
             "model": ErrorResponse,
         },
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
         422: {
             "description": "Validation Error",
             "model": ErrorResponse,
         },
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     },
     openapi_extra={
         "x-allowed-roles": [
@@ -94,20 +50,11 @@ router = APIRouter(prefix="/employees",)
             "HRBP",
             "HR_MANAGER",
         ],
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
         "x-query-params": [
             "withinDays (optional, int >= 1): only return tasks due between "
             "today and today + withinDays days. Omit to get the full, "
             "unfiltered list (existing/default behaviour).",
         ],
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     },
 )
 async def get_employee_onboarding_actions(
@@ -122,10 +69,6 @@ async def get_employee_onboarding_actions(
     ),
     _scope: AuthenticatedUser = Depends(require_employee_scope("employee_id")),
     db: AsyncSession = Depends(get_db),
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     within_days: int | None = Query(
         default=None,
         alias="withinDays",
@@ -135,11 +78,6 @@ async def get_employee_onboarding_actions(
             "(e.g. withinDays=30 for 'next month'). Omitted = no filtering."
         ),
     ),
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
 ):
 
     result = await db.execute(
@@ -159,15 +97,7 @@ async def get_employee_onboarding_actions(
         )
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     task_query = (
-=======
-    result = await db.execute(
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-    task_query = (
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
         select(OnboardingTask)
         .join(
             OnboardingPhase,
@@ -178,10 +108,6 @@ async def get_employee_onboarding_actions(
         )
     )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     if within_days is not None:
         today = date.today()
 
@@ -193,11 +119,6 @@ async def get_employee_onboarding_actions(
 
     result = await db.execute(task_query)
 
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)
     tasks = result.scalars().all()
 
 
@@ -258,20 +179,12 @@ async def get_employee_onboarding_actions(
     },
     openapi_extra={
         "x-allowed-roles": [
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
             "MANAGER",
             "HRBP",
             "HR_MANAGER",
         ],
         "x-scope-rules": [
             "MANAGER may only create tasks for their own direct reports.",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
             "HRBP may only create tasks for employees in their assigned "
             "teams (used as the fallback path when the manager misses the "
             "same-day deadline; see "
@@ -279,21 +192,7 @@ async def get_employee_onboarding_actions(
             "-- which only ever notifies HRBPs already assigned to the "
             "employee's team, so this scoping does not break that flow).",
             "HR_MANAGER is unrestricted.",
-<<<<<<< HEAD
         ],
-=======
-            "HRBP",
-            "HR_MANAGER",
-        ],
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-            "HRBP/HR_MANAGER are unrestricted (used as the fallback path "
-            "when the manager misses the same-day deadline; see "
-            "POST /employees/{employee_id}/onboarding/check-month2-tasks-deadline).",
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
-        ],
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
     },
 )
 async def create_employee_onboarding_action(
@@ -301,14 +200,7 @@ async def create_employee_onboarding_action(
     payload: OnboardingActionCreate,
     current_user: AuthenticatedUser = Depends(
         require_roles(
-<<<<<<< HEAD
-<<<<<<< HEAD
             "MANAGER",
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-            "MANAGER",
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
             "HRBP",
             "HR_MANAGER",
         )
@@ -316,10 +208,6 @@ async def create_employee_onboarding_action(
     db: AsyncSession = Depends(get_db),
 ):
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
     employee_result = await db.execute(
         select(Employee).where(
             Employee.id == employee_id
@@ -345,10 +233,6 @@ async def create_employee_onboarding_action(
                 detail="Only the employee's direct manager can create this task",
             )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     if (
         "HRBP" in current_user.roles
         and "HR_MANAGER" not in current_user.roles
@@ -366,13 +250,6 @@ async def create_employee_onboarding_action(
                 detail="HRBP can only create tasks for employees in assigned teams",
             )
 
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     result = await db.execute(
         select(Onboarding)
         .where(
@@ -443,14 +320,4 @@ async def create_employee_onboarding_action(
         dueDate=task.due_date,
         status=task.status,
         createdBy=creator,
-<<<<<<< HEAD
-<<<<<<< HEAD
     )
-=======
-    )
-    
-    
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-    )
->>>>>>> 7298a79 (add tests for checking employee actions coverage and fixing bugs)

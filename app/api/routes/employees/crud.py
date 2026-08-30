@@ -4,15 +4,7 @@ from app.core.current_user import AuthenticatedUser, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import require_roles
 from app.core.database import get_db
-<<<<<<< HEAD
-<<<<<<< HEAD
 from app.models.employee import Employee, EmployeeStatus
-=======
-from app.models.employee import Employee
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-from app.models.employee import Employee, EmployeeStatus
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 from app.schemas.employee import (
     EmployeeDetailOut, EmployeeSummary, EmployeeStatusUpdate, EmployeeCreate,
     EmployeeRoleAssignRequest, EmployeeRolesOut,
@@ -22,19 +14,7 @@ from app.models.employee_role import EmployeeRole
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models.team import Team
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
-=======
-from app.models.onboarding import Onboarding, OnboardingStatus
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
-from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 from app.schemas.errors import ErrorResponse
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -44,15 +24,7 @@ from app.models.user import User
 from supabase import Client
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 router = APIRouter(prefix="/employees")
-=======
-router = APIRouter(prefix="/employees", tags=["Employees"])
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-router = APIRouter(prefix="/employees")
->>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 async def get_hr_manager_employee(db: AsyncSession) -> Employee | None:
@@ -182,13 +154,6 @@ async def get_employees(
             "HRBP",
             "HR_MANAGER",
         ],
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
         "x-business-rules": [
             "This is how the HRBP records the continue/exit decision made "
             "at the end of onboarding (or at any other time).",
@@ -198,14 +163,6 @@ async def get_employees(
             "status back to ACTIVE while FINAL_DECISION_PENDING finalizes "
             "it as COMPLETED.",
         ],
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     },
 )
 async def update_employee_status(
@@ -253,10 +210,6 @@ async def update_employee_status(
             detail="Employee not found",
         )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     if payload.status == EmployeeStatus.EXITED:
         if payload.exit_type is None:
             raise HTTPException(
@@ -296,16 +249,6 @@ async def update_employee_status(
             employee.onboarding.status = OnboardingStatus.COMPLETED
             employee.onboarding.final_result = FinalResult.CONTINUE
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    employee.status = payload.status
-
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     await db.commit()
 
     result = await db.execute(
@@ -395,14 +338,7 @@ async def update_employee_status(
         nextActions=next_actions,
 
         status=employee.status,
-<<<<<<< HEAD
-<<<<<<< HEAD
         exitType=employee.exit_type,
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-        exitType=employee.exit_type,
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
         roles=roles,
     )
     
@@ -620,14 +556,7 @@ async def create_employee(
         nextActions=next_actions,
 
         status=employee.status,
-<<<<<<< HEAD
-<<<<<<< HEAD
         exitType=employee.exit_type,
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-        exitType=employee.exit_type,
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
         roles=roles,
     )
     
@@ -785,17 +714,6 @@ async def get_employee(
         nextActions=next_actions,
 
         status=employee.status,
-<<<<<<< HEAD
-<<<<<<< HEAD
         exitType=employee.exit_type,
         roles=roles,
     )
-=======
-        roles=roles,
-    )
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-        exitType=employee.exit_type,
-        roles=roles,
-    )
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)

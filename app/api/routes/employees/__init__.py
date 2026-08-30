@@ -16,15 +16,7 @@ from .decisions import router as decisions_router
 from .competencies import router as competencies_router
 from .roles import router as roles_router
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 router = APIRouter()
-=======
-router = APIRouter(tags=["Employees"])
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-router = APIRouter()
->>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 router.include_router(crud_router)
 router.include_router(onboarding_router)

@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 """
 Tests for closing Gap A: a Manager must be able to enter onboarding tasks
 for their own direct report (e.g. right after the month-2 meeting).
@@ -21,25 +17,13 @@ every other HRBP-scoped endpoint in the app, e.g. `POST /employees` and
 HrbpTeamAssignment rather than being able to act on an arbitrary employee.
 """
 
-<<<<<<< HEAD
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 from datetime import date
 
 import pytest
 
 from app.core.current_user import AuthenticatedUser, get_current_user
 from app.main import app
-<<<<<<< HEAD
-<<<<<<< HEAD
 from app.models import Department, HrbpTeamAssignment, Team
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
-from app.models import Department, HrbpTeamAssignment, Team
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 from app.models.employee import Employee
 from app.models.onboarding import Onboarding
 from app.models.onboarding_phase import OnboardingPhase, PhaseStatus
@@ -120,16 +104,8 @@ async def test_manager_cannot_create_onboarding_action_for_non_report(
     client,
     db_session,
 ):
-<<<<<<< HEAD
-<<<<<<< HEAD
     """A manager must not be able to assign tasks to someone who isn't
     their direct report, even though MANAGER is now an allowed role."""
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
-    """A manager must not be able to assign tasks to someone who isn't
-    their direct report, even though MANAGER is now an allowed role."""
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 
     manager = Employee(
         username="unrelated_manager",
@@ -203,16 +179,8 @@ async def test_hrbp_can_still_create_onboarding_action_for_any_employee(
     client,
     db_session,
 ):
-<<<<<<< HEAD
-<<<<<<< HEAD
     """Regression guard: HRBP's pre-existing unrestricted access (used as
     the deadline-miss fallback path) must still work after adding MANAGER."""
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
-    """Regression guard: HRBP's pre-existing unrestricted access (used as
-    the deadline-miss fallback path) must still work after adding MANAGER."""
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 
     hrbp = Employee(
         username="hrbp_fallback",
@@ -230,10 +198,6 @@ async def test_hrbp_can_still_create_onboarding_action_for_any_employee(
     db_session.add(manager)
     await db_session.flush()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     department = Department(name="hrbp-fallback-dept")
     db_session.add(department)
     await db_session.flush()
@@ -250,24 +214,12 @@ async def test_hrbp_can_still_create_onboarding_action_for_any_employee(
     # other HRBP-scoped endpoints (POST /employees, start-review, IDP...).
     db_session.add(HrbpTeamAssignment(hrbp_id=hrbp.id, team_id=team.id))
 
-<<<<<<< HEAD
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     employee = Employee(
         username="hrbp_fallback_target",
         full_name="Employee",
         join_date=date.today(),
         manager_id=manager.id,
-<<<<<<< HEAD
-<<<<<<< HEAD
         team_id=team.id,
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
-        team_id=team.id,
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     )
     db_session.add(employee)
     await db_session.flush()
@@ -320,14 +272,7 @@ async def test_employee_still_cannot_create_onboarding_action(
     client,
     db_session,
 ):
-<<<<<<< HEAD
-<<<<<<< HEAD
     """Regression guard: plain EMPLOYEE role must still be rejected."""
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
-    """Regression guard: plain EMPLOYEE role must still be rejected."""
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 
     employee = Employee(
         username="plain_employee_task",
@@ -355,10 +300,6 @@ async def test_employee_still_cannot_create_onboarding_action(
     app.dependency_overrides.clear()
 
     assert response.status_code == 403
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 
 
 @pytest.mark.asyncio
@@ -428,8 +369,3 @@ async def test_hrbp_cannot_create_onboarding_action_outside_assigned_team(
     app.dependency_overrides.clear()
 
     assert response.status_code == 403
-<<<<<<< HEAD
-=======
->>>>>>> 76eb787 (feat: manager can make second month task and can approved the meeting that manager made)
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)

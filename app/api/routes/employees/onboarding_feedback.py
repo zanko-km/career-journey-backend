@@ -17,23 +17,10 @@ from app.schemas.onboarding import (
 )
 from app.models.onboarding_feedback import OnboardingFeedback
 from app.core.scope import require_employee_scope
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
 from app.services.notification import notify_employee
 
 
 router = APIRouter(prefix="/employees")
-=======
-
-
-<<<<<<< HEAD
-router = APIRouter(prefix="/employees", tags=["Employees"])
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-router = APIRouter(prefix="/employees")
->>>>>>> 2abb2b4 (fixing issues with swagger and adding more test to performance testing)
 
 
 @router.get(
@@ -227,10 +214,6 @@ async def create_employee_onboarding_feedback(
 
     db.add(feedback)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     await db.flush()
 
     # Notify the employee's direct manager that month-1 HRBP feedback has
@@ -248,11 +231,6 @@ async def create_employee_onboarding_feedback(
             reference_id=feedback.id,
         )
 
-<<<<<<< HEAD
-=======
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
     await db.commit()
 
     await db.refresh(feedback)
@@ -270,12 +248,4 @@ async def create_employee_onboarding_feedback(
         )
     )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     return result.scalar_one()
-=======
-    return result.scalar_one()
->>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
-=======
-    return result.scalar_one()
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)

@@ -78,42 +78,12 @@ class StartReviewRequest(BaseModel):
         default=None,
         alias="focusEndsAt",
     )
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
     meetingScheduledAt: datetime = Field(
         alias="meetingScheduledAt",
         description=(
             "Required. A performance-review meeting is created "
             "automatically with the employee and their direct manager as "
             "participants (both are notified)."
-=======
-    meetingScheduledAt: datetime | None = Field(
-        default=None,
-        alias="meetingScheduledAt",
-        description=(
-            "Optional. If provided, a performance-review meeting is "
-            "created automatically with the employee and their direct "
-            "manager as participants (both are notified). If omitted, "
-            "only the start-review notifications are sent and the HRBP "
-            "can schedule the meeting separately via POST /meetings."
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
-=======
-    meetingScheduledAt: datetime = Field(
-        alias="meetingScheduledAt",
-        description=(
-            "Required. A performance-review meeting is created "
-            "automatically with the employee and their direct manager as "
-            "participants (both are notified)."
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
-=======
-    meetingScheduledAt: datetime = Field(
-        alias="meetingScheduledAt",
-        description=(
-            "Required. A performance-review meeting is created "
-            "automatically with the employee and their direct manager as "
-            "participants (both are notified)."
->>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
         ),
     )
 
