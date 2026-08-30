@@ -101,12 +101,27 @@ async def list_employee_competencies(
             "model": ErrorResponse,
         },
     },
+    openapi_extra={
+        "x-allowed-roles": [
+            "MANAGER",
+            "HRBP",
+            "HR_MANAGER",
+        ],
+        "x-scope-rules": [
+            "MANAGER may only assign competencies to employees in their "
+            "own management hierarchy (direct or indirect reports).",
+            "HRBP may only assign competencies to employees in their "
+            "assigned teams.",
+            "HR_MANAGER is unrestricted.",
+        ],
+    },
 )
 async def assign_employee_competencies(
     employee_id: int,
     payload: AssignEmployeeCompetenciesRequest,
     current_user: AuthenticatedUser = Depends(
         require_roles(
+            "MANAGER",
             "HRBP",
             "HR_MANAGER",
         )

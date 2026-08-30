@@ -121,6 +121,9 @@ async def get_competency_cycle(
             "Only allowed while the cycle is ACTIVE.",
             "Sets the deadline (performance review) and the focus competencies for this cycle, "
             "then unlocks self-assessment for the employee.",
+            "meetingScheduledAt is required: a performance-review meeting "
+            "with the employee and their direct manager is always created "
+            "and both are notified.",
         ],
     },
 )
@@ -218,52 +221,52 @@ async def start_competency_review(
             reference_id=cycle.id,
         )
 
-    # Optionally, auto-schedule the performance review meeting with the
-    # employee and their direct manager, so the HRBP doesn't have to make
-    # a second call to POST /meetings for the common case.
-    if payload.meetingScheduledAt is not None:
-        meeting = Meeting(
-            organizer_id=current_user.employee_id,
-            employee_id=cycle.employee_id,
-            scheduled_at=payload.meetingScheduledAt,
-            notes="Performance review meeting",
-            status=MeetingStatus.PROPOSED,
-        )
-        db.add(meeting)
-        await db.flush()
+    # A performance-review meeting with the employee and their direct
+    # manager is mandatory whenever a review is started -- the HRBP must
+    # go into that meeting together with them (per business requirement),
+    # not merely have the option to schedule one later.
+    meeting = Meeting(
+        organizer_id=current_user.employee_id,
+        employee_id=cycle.employee_id,
+        scheduled_at=payload.meetingScheduledAt,
+        notes="Performance review meeting",
+        status=MeetingStatus.PROPOSED,
+    )
+    db.add(meeting)
+    await db.flush()
 
-        meeting_participant_ids = {cycle.employee_id, current_user.employee_id}
-        if cycle.employee.manager_id is not None:
-            meeting_participant_ids.add(cycle.employee.manager_id)
+    meeting_participant_ids = {cycle.employee_id, current_user.employee_id}
+    if cycle.employee.manager_id is not None:
+        meeting_participant_ids.add(cycle.employee.manager_id)
 
-        for participant_id in meeting_participant_ids:
-            db.add(
-                MeetingParticipant(
-                    meeting_id=meeting.id,
-                    employee_id=participant_id,
-                    # The HRBP organizing it doesn't need to "respond" to
-                    # their own invite, same as the general /meetings flow.
-                    response_status=(
-                        MeetingResponseStatus.CONFIRMED
-                        if participant_id == current_user.employee_id
-                        else MeetingResponseStatus.PENDING
-                    ),
-                )
+    for participant_id in meeting_participant_ids:
+        db.add(
+            MeetingParticipant(
+                meeting_id=meeting.id,
+                employee_id=participant_id,
+                # The HRBP organizing it doesn't need to "respond" to
+                # their own invite, same as the general /meetings flow.
+                response_status=(
+                    MeetingResponseStatus.CONFIRMED
+                    if participant_id == current_user.employee_id
+                    else MeetingResponseStatus.PENDING
+                ),
             )
+        )
 
-            if participant_id != current_user.employee_id:
-                await notify_employee(
-                    db,
-                    employee_id=participant_id,
-                    type="MEETING_SCHEDULED",
-                    message=(
-                        "A performance review meeting has been scheduled "
-                        f"for {payload.meetingScheduledAt.isoformat()}. "
-                        "Please confirm your attendance."
-                    ),
-                    reference_type="MEETING",
-                    reference_id=meeting.id,
-                )
+        if participant_id != current_user.employee_id:
+            await notify_employee(
+                db,
+                employee_id=participant_id,
+                type="MEETING_SCHEDULED",
+                message=(
+                    "A performance review meeting has been scheduled "
+                    f"for {payload.meetingScheduledAt.isoformat()}. "
+                    "Please confirm your attendance."
+                ),
+                reference_type="MEETING",
+                reference_id=meeting.id,
+            )
 
     await db.commit()
     await db.refresh(cycle)

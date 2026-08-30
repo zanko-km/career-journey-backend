@@ -14,7 +14,7 @@ from app.models.employee_role import EmployeeRole
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models.team import Team
-from app.models.onboarding import Onboarding, OnboardingStatus
+from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
 from app.schemas.errors import ErrorResponse
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -154,6 +154,15 @@ async def get_employees(
             "HRBP",
             "HR_MANAGER",
         ],
+        "x-business-rules": [
+            "This is how the HRBP records the continue/exit decision made "
+            "at the end of onboarding (or at any other time).",
+            "If the employee has an open Onboarding (IN_PROGRESS or "
+            "FINAL_DECISION_PENDING), it is kept in sync: setting status "
+            "to EXITED also finalizes the onboarding as EXITED; setting "
+            "status back to ACTIVE while FINAL_DECISION_PENDING finalizes "
+            "it as COMPLETED.",
+        ],
     },
 )
 async def update_employee_status(
@@ -215,6 +224,30 @@ async def update_employee_status(
         employee.exit_type = None
 
     employee.status = payload.status
+
+    # Per the requirement doc, this is how the HRBP records the
+    # continue/exit decision made in the end-of-onboarding meeting. Keep
+    # the Onboarding record's status/final_result in sync so it doesn't
+    # silently drift from Employee.status (e.g. staying
+    # FINAL_DECISION_PENDING forever after the employee has already been
+    # marked EXITED here). This only touches an onboarding that is still
+    # open (not already COMPLETED/EXITED/CANCELLED); it never overrides a
+    # decision that's already been finalized through the
+    # employee-decision/manager-decision flow.
+    if employee.onboarding is not None and employee.onboarding.status in (
+        OnboardingStatus.IN_PROGRESS,
+        OnboardingStatus.FINAL_DECISION_PENDING,
+    ):
+        if payload.status == EmployeeStatus.EXITED:
+            employee.onboarding.status = OnboardingStatus.EXITED
+            employee.onboarding.final_result = FinalResult.EXIT
+        elif (
+            payload.status == EmployeeStatus.ACTIVE
+            and employee.onboarding.status
+            == OnboardingStatus.FINAL_DECISION_PENDING
+        ):
+            employee.onboarding.status = OnboardingStatus.COMPLETED
+            employee.onboarding.final_result = FinalResult.CONTINUE
 
     await db.commit()
 

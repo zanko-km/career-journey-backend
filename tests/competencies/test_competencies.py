@@ -573,14 +573,38 @@ async def test_hrbp_can_assign_competencies(
     assert response.status_code == 200
     
 @pytest.mark.asyncio
-async def test_manager_cannot_assign_competencies(
+async def test_manager_can_assign_competencies_to_direct_report(
     client,
+    db_session,
 ):
+    manager = Employee(
+        username="manager2",
+        full_name="Manager",
+        join_date=date.today(),
+    )
+
+    db_session.add(manager)
+    await db_session.flush()
+
+    employee = Employee(
+        username="employee3",
+        full_name="Employee",
+        join_date=date.today(),
+        manager_id=manager.id,
+    )
+
+    competency = Competency(
+        name="Ownership",
+        active=True,
+    )
+
+    db_session.add_all([employee, competency])
+    await db_session.commit()
 
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
         id=1,
-        employee_id=1,
-        username="manager",
+        employee_id=manager.id,
+        username="manager2",
         full_name="Manager",
         roles=[
             EmployeeRoleType.MANAGER
@@ -588,9 +612,54 @@ async def test_manager_cannot_assign_competencies(
     )
 
     response = await client.post(
-        "/employees/1/competencies",
+        f"/employees/{employee.id}/competencies",
         json={
-            "competencyIds":[1]
+            "competencyIds": [competency.id]
+        }
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_manager_cannot_assign_competencies_to_non_report(
+    client,
+    db_session,
+):
+    manager = Employee(
+        username="manager3",
+        full_name="Manager",
+        join_date=date.today(),
+    )
+
+    unrelated_employee = Employee(
+        username="employee4",
+        full_name="Unrelated Employee",
+        join_date=date.today(),
+    )
+
+    competency = Competency(
+        name="Communication",
+        active=True,
+    )
+
+    db_session.add_all([manager, unrelated_employee, competency])
+    await db_session.commit()
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        id=1,
+        employee_id=manager.id,
+        username="manager3",
+        full_name="Manager",
+        roles=[
+            EmployeeRoleType.MANAGER
+        ],
+    )
+
+    response = await client.post(
+        f"/employees/{unrelated_employee.id}/competencies",
+        json={
+            "competencyIds": [competency.id]
         }
     )
 
