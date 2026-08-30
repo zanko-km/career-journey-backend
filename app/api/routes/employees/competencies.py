@@ -110,6 +110,9 @@ async def list_employee_competencies(
         },
     },
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     openapi_extra={
         "x-allowed-roles": [
             "MANAGER",
@@ -124,8 +127,11 @@ async def list_employee_competencies(
             "HR_MANAGER is unrestricted.",
         ],
     },
+<<<<<<< HEAD
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 )
 async def assign_employee_competencies(
     employee_id: int,
@@ -133,9 +139,13 @@ async def assign_employee_competencies(
     current_user: AuthenticatedUser = Depends(
         require_roles(
 <<<<<<< HEAD
+<<<<<<< HEAD
             "MANAGER",
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+            "MANAGER",
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
             "HRBP",
             "HR_MANAGER",
         )

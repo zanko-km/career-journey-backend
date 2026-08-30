@@ -23,10 +23,14 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models.team import Team
 <<<<<<< HEAD
+<<<<<<< HEAD
 from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
 =======
 from app.models.onboarding import Onboarding, OnboardingStatus
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 from app.schemas.errors import ErrorResponse
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
@@ -175,6 +179,9 @@ async def get_employees(
             "HR_MANAGER",
         ],
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
         "x-business-rules": [
             "This is how the HRBP records the continue/exit decision made "
             "at the end of onboarding (or at any other time).",
@@ -184,8 +191,11 @@ async def get_employees(
             "status back to ACTIVE while FINAL_DECISION_PENDING finalizes "
             "it as COMPLETED.",
         ],
+<<<<<<< HEAD
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     },
 )
 async def update_employee_status(
@@ -276,10 +286,13 @@ async def update_employee_status(
             employee.onboarding.status = OnboardingStatus.COMPLETED
             employee.onboarding.final_result = FinalResult.CONTINUE
 
+<<<<<<< HEAD
 =======
     employee.status = payload.status
 
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     await db.commit()
 
     result = await db.execute(
