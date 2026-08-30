@@ -78,15 +78,12 @@ class StartReviewRequest(BaseModel):
         default=None,
         alias="focusEndsAt",
     )
-    meetingScheduledAt: datetime | None = Field(
-        default=None,
+    meetingScheduledAt: datetime = Field(
         alias="meetingScheduledAt",
         description=(
-            "Optional. If provided, a performance-review meeting is "
-            "created automatically with the employee and their direct "
-            "manager as participants (both are notified). If omitted, "
-            "only the start-review notifications are sent and the HRBP "
-            "can schedule the meeting separately via POST /meetings."
+            "Required. A performance-review meeting is created "
+            "automatically with the employee and their direct manager as "
+            "participants (both are notified)."
         ),
     )
 
