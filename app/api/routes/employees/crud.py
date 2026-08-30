@@ -24,10 +24,14 @@ from sqlalchemy.exc import IntegrityError
 from app.models.team import Team
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
 =======
 from app.models.onboarding import Onboarding, OnboardingStatus
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
 from app.models.onboarding import Onboarding, OnboardingStatus, FinalResult
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
@@ -180,6 +184,9 @@ async def get_employees(
         ],
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
         "x-business-rules": [
@@ -192,8 +199,11 @@ async def get_employees(
             "it as COMPLETED.",
         ],
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     },
@@ -287,10 +297,13 @@ async def update_employee_status(
             employee.onboarding.final_result = FinalResult.CONTINUE
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     employee.status = payload.status
 
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     await db.commit()

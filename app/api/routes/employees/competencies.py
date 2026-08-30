@@ -111,6 +111,9 @@ async def list_employee_competencies(
     },
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     openapi_extra={
@@ -128,8 +131,11 @@ async def list_employee_competencies(
         ],
     },
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 )
@@ -140,9 +146,13 @@ async def assign_employee_competencies(
         require_roles(
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             "MANAGER",
 =======
 >>>>>>> 7532306 (refactor: split employees.py (2528 lines) into a routes package)
+=======
+            "MANAGER",
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
             "MANAGER",
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)

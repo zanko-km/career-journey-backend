@@ -180,11 +180,17 @@ async def get_competency_cycle(
             "then unlocks self-assessment for the employee.",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             "meetingScheduledAt is required: a performance-review meeting "
             "with the employee and their direct manager is always created "
             "and both are notified.",
 =======
 >>>>>>> 9218357 (refactor: split competency_cycles.py and meetings.py into route packages)
+=======
+            "meetingScheduledAt is required: a performance-review meeting "
+            "with the employee and their direct manager is always created "
+            "and both are notified.",
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
             "meetingScheduledAt is required: a performance-review meeting "
             "with the employee and their direct manager is always created "
@@ -301,6 +307,9 @@ async def start_competency_review(
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 =======
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     # A performance-review meeting with the employee and their direct
@@ -316,6 +325,7 @@ async def start_competency_review(
     )
     db.add(meeting)
     await db.flush()
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     meeting_participant_ids = {cycle.employee_id, current_user.employee_id}
@@ -369,6 +379,8 @@ async def start_competency_review(
         await db.flush()
 =======
 >>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
 
     meeting_participant_ids = {cycle.employee_id, current_user.employee_id}
     if cycle.employee.manager_id is not None:
@@ -386,6 +398,7 @@ async def start_competency_review(
                     if participant_id == current_user.employee_id
                     else MeetingResponseStatus.PENDING
                 ),
+<<<<<<< HEAD
             )
         )
 
@@ -401,9 +414,29 @@ async def start_competency_review(
                 ),
                 reference_type="MEETING",
                 reference_id=meeting.id,
+=======
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
+            )
+        )
+
+<<<<<<< HEAD
+>>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
+=======
+        if participant_id != current_user.employee_id:
+            await notify_employee(
+                db,
+                employee_id=participant_id,
+                type="MEETING_SCHEDULED",
+                message=(
+                    "A performance review meeting has been scheduled "
+                    f"for {payload.meetingScheduledAt.isoformat()}. "
+                    "Please confirm your attendance."
+                ),
+                reference_type="MEETING",
+                reference_id=meeting.id,
             )
 
->>>>>>> af78ad1 (feat: adding notif feedback for manager, fixing the exit type, fixing the meeting bugs in competencies cycle)
+>>>>>>> bad410e (adding state machine tests and fixing actions for HRBP and employee)
     await db.commit()
     await db.refresh(cycle)
 
