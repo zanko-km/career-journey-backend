@@ -1,27 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
-from app.core.current_user import AuthenticatedUser, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.permissions import require_roles
+from sqlalchemy.orm import selectinload
+
+from app.core.current_user import AuthenticatedUser
 from app.core.database import get_db
+from app.core.permissions import require_roles
+from app.models import Meeting, MeetingParticipant
 from app.models.employee import Employee
 from app.models.hrbp_team_assignment import HrbpTeamAssignment
-from sqlalchemy.orm import selectinload
 from app.models.onboarding import Onboarding, OnboardingStatus
-from app.schemas.errors import ErrorResponse
-from app.schemas.onboarding import (
-    OnboardingOut, StartOnboardingRequest,
-    UpdateOnboardingRequest, OnboardingPhaseOut, OnboardingPhaseCreate,
-    PhaseStatus, OnboardingActionOut, OnboardingActionCreate,
-    OnboardingFeedbackOut, OnboardingFeedbackCreate,
-    EmployeeDecisionRequest, EmployeeDecisionResponse, ManagerDecisionRequest,
-)
 from app.models.onboarding_phase import OnboardingPhase
 from app.models.onboarding_task import OnboardingTask
-from app.services.onboarding import OnboardingService
-from app.models import Meeting, MeetingParticipant, Competency, EmployeeCompetency, CompetencyCycle, MeetingStatus
+from app.schemas.errors import ErrorResponse
+from app.schemas.onboarding import (
+    EmployeeDecisionRequest,
+    EmployeeDecisionResponse,
+    ManagerDecisionRequest,
+    OnboardingOut,
+)
 from app.services.notification import notify_employee
-
+from app.services.onboarding import OnboardingService
 
 router = APIRouter(prefix="/employees")
 
@@ -415,12 +414,24 @@ async def check_month2_tasks_deadline(
         select(Meeting).where(
             Meeting.onboarding_id == onboarding.id,
             Meeting.onboarding_month == 2,
-            Meeting.status == MeetingStatus.HELD,
         )
     )
     meeting = meeting_result.scalar_one_or_none()
 
     if meeting is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Month 2 manager meeting has not been held yet",
+        )
+
+    participants_result = await db.execute(
+        select(MeetingParticipant).where(
+            MeetingParticipant.meeting_id == meeting.id
+        )
+    )
+    participants = participants_result.scalars().all()
+
+    if not participants or not all(p.held_confirmed for p in participants):
         raise HTTPException(
             status_code=409,
             detail="Month 2 manager meeting has not been held yet",
